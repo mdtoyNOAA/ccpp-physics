@@ -155,12 +155,11 @@
 
     subroutine GFS_suite_interstitial_2_finalize()
     end subroutine GFS_suite_interstitial_2_finalize
-#if 0
+
 !> \section arg_table_GFS_suite_interstitial_2_run Argument Table
 !! \htmlinclude GFS_suite_interstitial_2_run.html
 !!
-#endif
-    subroutine GFS_suite_interstitial_2_run (im, levs, lssav, ldiag3d, lsidea, cplflx, flag_cice, shal_cnv, old_monin, mstrat,    &
+    subroutine GFS_suite_interstitial_2_run (im, levs, lssav, ldiag3d, lsidea, flag_cice, shal_cnv, old_monin, mstrat,            &
       do_shoc, frac_grid, imfshalcnv, dtf, xcosz, adjsfcdsw, adjsfcdlw, cice, pgr, ulwsfc_cice, lwhd, htrsw, htrlw, xmu, ctei_rm, &
       work1, work2, prsi, tgrs, prsl, qgrs_water_vapor, qgrs_cloud_water, cp, hvap, prslk, suntim, adjsfculw, adjsfculw_lnd,      &
       adjsfculw_ice, adjsfculw_wat, dlwsfc, ulwsfc, psmean, dt3dt_lw, dt3dt_sw, dt3dt_pbl, dt3dt_dcnv, dt3dt_scnv, dt3dt_mp,      &
@@ -170,7 +169,7 @@
 
       ! interface variables
       integer,              intent(in   ) :: im, levs, imfshalcnv
-      logical,              intent(in   ) :: lssav, ldiag3d, lsidea, cplflx, shal_cnv
+      logical,              intent(in   ) :: lssav, ldiag3d, lsidea, shal_cnv
       logical,              intent(in   ) :: old_monin, mstrat, do_shoc, frac_grid, use_LW_jacobian
       real(kind=kind_phys), intent(in   ) :: dtf, cp, hvap
 
@@ -475,13 +474,13 @@
     subroutine GFS_suite_interstitial_3_finalize()
     end subroutine GFS_suite_interstitial_3_finalize
 
-#if 0
 !> \section arg_table_GFS_suite_interstitial_3_run Argument Table
 !! \htmlinclude GFS_suite_interstitial_3_run.html
 !!
-#endif
-    subroutine GFS_suite_interstitial_3_run (otsptflag, ntracp1,   &
-               im, levs, nn, cscnv,                                     &
+! Dong
+!    subroutine GFS_suite_interstitial_3_run (otsptflag, ntracp1,   
+!               im, levs, nn, cscnv,                                     
+    subroutine GFS_suite_interstitial_3_run (im, levs, nn, cscnv,       &
                satmedmf, trans_trac, do_shoc, ltaerosol, ntrac, ntcw,   &
                ntiw, ntclamt, ntrw, ntsw, ntrnc, ntsnc, ntgl, ntgnc,    &
                xlon, xlat, gt0, gq0, imp_physics, imp_physics_mg,       &
@@ -522,7 +521,7 @@
       real(kind=kind_phys), dimension(im, levs),      intent(inout) :: rhc, save_qc
       ! save_qi is not allocated for Zhao-Carr MP
       real(kind=kind_phys), dimension(:, :),          intent(inout) :: save_qi
-      real(kind=kind_phys), dimension(:, :),          intent(inout) :: save_tcp ! ONLY ALLOCATE FOR THOMPSON! TODO
+      real(kind=kind_phys), dimension(:, :),          intent(inout) :: save_tcp
       real(kind=kind_phys), dimension(im, levs, nn),  intent(inout) :: clw
 
       character(len=*), intent(out) :: errmsg
@@ -668,11 +667,16 @@
 !! \htmlinclude GFS_suite_interstitial_4_run.html
 !!
     subroutine GFS_suite_interstitial_4_run (im, levs, ltaerosol, cplchm, tracers_total, ntrac, ntcw, ntiw, ntclamt, &
-      ntrw, ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn, ntccn, imp_physics, imp_physics_gfdl,                 &
-      imp_physics_thompson, imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, imp_physics_nssl2m,                    &
-      imp_physics_nssl2mccn, nssl_invertccn,                                                              &
-      dtf, save_qc,save_qi, con_pi, gq0, clw, prsl, save_tcp, con_rd, nwfa, spechum, dqdti,   &
-      otsptflag, ntracp1, errmsg, errflg)
+! Dong
+!      ntrw, ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn, ntccn, imp_physics, imp_physics_gfdl,                 
+!      imp_physics_thompson, imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, imp_physics_nssl2m,                   
+!      imp_physics_nssl2mccn, nssl_invertccn,                                                              
+!      dtf, save_qc,save_qi, con_pi, gq0, clw, prsl, save_tcp, con_rd, nwfa, spechum, dqdti,   
+!      otsptflag, ntracp1, errmsg, errflg)
+      ntrw, ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn, imp_physics, imp_physics_gfdl, imp_physics_thompson,  &
+      imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, imp_physics_nssl2m, imp_physics_nssl2mccn, nssl_invertccn,   &              
+      convert_dry_rho, dtf, save_qc, save_qi, con_pi,              &
+      gq0, clw, prsl, save_tcp, con_rd, con_eps, nwfa, spechum, dqdti, errmsg, errflg)
 
       use machine,               only: kind_phys
       use module_mp_nssl_2mom,   only: qccn
@@ -689,9 +693,8 @@
         ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn, ntccn, imp_physics, imp_physics_gfdl, imp_physics_thompson,    &
         imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, imp_physics_nssl2m, imp_physics_nssl2mccn
 
-      logical,                                  intent(in) :: ltaerosol, cplchm
-      
       logical,                                  intent(in) :: nssl_invertccn
+      logical,                                  intent(in) :: ltaerosol, cplchm, convert_dry_rho
 
       real(kind=kind_phys),                     intent(in) :: con_pi, dtf
       real(kind=kind_phys), dimension(im,levs), intent(in) :: save_qc
@@ -701,7 +704,7 @@
       real(kind=kind_phys), dimension(im,levs,ntrac), intent(inout) :: gq0
       real(kind=kind_phys), dimension(im,levs,nn),    intent(inout) :: clw
       real(kind=kind_phys), dimension(im,levs),       intent(in) :: prsl
-      real(kind=kind_phys),                           intent(in) :: con_rd
+      real(kind=kind_phys),                           intent(in) :: con_rd, con_eps
       real(kind=kind_phys), dimension(:,:),           intent(in) :: nwfa, save_tcp
       real(kind=kind_phys), dimension(im,levs),       intent(in) :: spechum
 
@@ -718,7 +721,7 @@
       
       real(kind=kind_phys) :: liqm, icem, xccn, xcwmas, xccw, xcimas ! , qccn
 
-      real(kind=kind_phys), dimension(im,levs) :: rho_dryair
+      real(kind=kind_phys) :: rho, orho
       real(kind=kind_phys), dimension(im,levs) :: qv_mp !< kg kg-1 (dry mixing ratio)
       real(kind=kind_phys), dimension(im,levs) :: qc_mp !< kg kg-1 (dry mixing ratio)
       real(kind=kind_phys), dimension(im,levs) :: qi_mp !< kg kg-1 (dry mixing ratio)
@@ -820,32 +823,55 @@
           endif
 
           if (imp_physics == imp_physics_thompson .and. (ntlnc>0 .or. ntinc>0)) then
-            do k=1,levs
-              do i=1,im
-                !> - Density of air in kg m-3
-                rho_dryair(i,k) = prsl(i,k) / (con_rd*save_tcp(i,k))
-                !> - Convert specific humidity to dry mixing ratio
-                qv_mp(i,k) = spechum(i,k) / (one-spechum(i,k))
-                if (ntlnc>0) then
-                  !> - Convert moist mixing ratio to dry mixing ratio
-                  qc_mp(i,k) = (clw(i,k,2)-save_qc(i,k)) / (one-spechum(i,k))
-                  !> - Convert number concentration from moist to dry
-                  nc_mp(i,k) = gq0(i,k,ntlnc) / (one-spechum(i,k))
-                  nc_mp(i,k) = max(zero, nc_mp(i,k) + make_DropletNumber(qc_mp(i,k) * rho_dryair(i,k), nwfa(i,k)) * (one/rho_dryair(i,k)))
-                  !> - Convert number concentrations from dry to moist
-                  gq0(i,k,ntlnc) = nc_mp(i,k) / (one+qv_mp(i,k))
-                endif
-                if (ntinc>0) then
-                  !> - Convert moist mixing ratio to dry mixing ratio
-                  qi_mp(i,k) = (clw(i,k,1)-save_qi(i,k)) / (one-spechum(i,k))
-                  !> - Convert number concentration from moist to dry
-                  ni_mp(i,k) = gq0(i,k,ntinc) / (one-spechum(i,k)) 
-                  ni_mp(i,k) = max(zero, ni_mp(i,k) + make_IceNumber(qi_mp(i,k) * rho_dryair(i,k), save_tcp(i,k)) * (one/rho_dryair(i,k)))
-                  !> - Convert number concentrations from dry to moist
-                  gq0(i,k,ntinc) = ni_mp(i,k) / (one+qv_mp(i,k))
-                endif
+            if_convert_dry_rho: if (convert_dry_rho) then
+              do k=1,levs
+                do i=1,im
+                  !> - Convert specific humidity to dry mixing ratio
+                  qv_mp(i,k) = spechum(i,k) / (one-spechum(i,k))
+                  !> - Density of air in kg m-3 and inverse density
+                  rho = con_eps*prsl(i,k) / (con_rd*save_tcp(i,k)*(qv_mp(i,k)+con_eps))
+                  orho = one/rho
+                  if (ntlnc>0) then
+                    !> - Convert moist mixing ratio to dry mixing ratio
+                    qc_mp(i,k) = (clw(i,k,2)-save_qc(i,k)) / (one-spechum(i,k))
+                    !> - Convert number concentration from moist to dry
+                    nc_mp(i,k) = gq0(i,k,ntlnc) / (one-spechum(i,k))
+                    nc_mp(i,k) = max(zero, nc_mp(i,k) + make_DropletNumber(qc_mp(i,k) * rho, nwfa(i,k)*rho) * orho)
+                    !> - Convert number concentrations from dry to moist
+                    gq0(i,k,ntlnc) = nc_mp(i,k) / (one+qv_mp(i,k))
+                  endif
+                  if (ntinc>0) then
+                    !> - Convert moist mixing ratio to dry mixing ratio
+                    qi_mp(i,k) = (clw(i,k,1)-save_qi(i,k)) / (one-spechum(i,k))
+                    !> - Convert number concentration from moist to dry
+                    ni_mp(i,k) = gq0(i,k,ntinc) / (one-spechum(i,k)) 
+                    ni_mp(i,k) = max(zero, ni_mp(i,k) + make_IceNumber(qi_mp(i,k) * rho, save_tcp(i,k)) * orho)
+                    !> - Convert number concentrations from dry to moist
+                    gq0(i,k,ntinc) = ni_mp(i,k) / (one+qv_mp(i,k))
+                  endif
+                enddo
               enddo
-            enddo
+            else
+              do k=1,levs
+                do i=1,im
+                  !> - Density of air in kg m-3 and inverse density
+                  rho = con_eps*prsl(i,k) / (con_rd*save_tcp(i,k)*(spechum(i,k)+con_eps))
+                  orho = one/rho
+                  if (ntlnc>0) then
+                    !> - Update cloud water mixing ratio
+                    qc_mp(i,k) = (clw(i,k,2)-save_qc(i,k))
+                    !> - Update cloud water number concentration
+                    gq0(i,k,ntlnc) = max(zero, gq0(i,k,ntlnc) + make_DropletNumber(qc_mp(i,k) * rho, nwfa(i,k)*rho) * orho)
+                  endif
+                  if (ntinc>0) then
+                    !> - Update cloud ice mixing ratio
+                    qi_mp(i,k) = (clw(i,k,1)-save_qi(i,k))
+                    !> - Update cloud ice number concentration
+                    gq0(i,k,ntinc) = max(zero, gq0(i,k,ntinc) + make_IceNumber(qi_mp(i,k) * rho, save_tcp(i,k)) * orho)
+                  endif
+                enddo
+              enddo
+            end if if_convert_dry_rho
           endif
 
         else
