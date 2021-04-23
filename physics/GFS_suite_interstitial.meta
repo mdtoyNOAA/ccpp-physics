@@ -321,14 +321,6 @@
   type = logical
   intent = in
   optional = F
-[cplflx]
-  standard_name = flag_for_flux_coupling
-  long_name = flag controlling cplflx collection (default off)
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-  optional = F
 [flag_cice]
   standard_name = flag_for_cice
   long_name = flag for cice
@@ -628,8 +620,8 @@
   intent = in
   optional = F
 [adjsfculw_wat]
-  standard_name = surface_upwelling_longwave_flux_over_ocean_interstitial
-  long_name = surface upwelling longwave flux at current time over ocean (temporary use as interstitial)
+  standard_name = surface_upwelling_longwave_flux_over_water_interstitial
+  long_name = surface upwelling longwave flux at current time over water (temporary use as interstitial)
   units = W m-2
   dimensions = (horizontal_loop_extent)
   type = real
@@ -1833,6 +1825,14 @@
   type = logical
   intent = in
   optional = F
+[convert_dry_rho]
+  standard_name = flag_for_converting_hydrometeors_from_moist_to_dry_air
+  long_name = flag for converting hydrometeors from moist to dry air
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+  optional = F
 [dtf]
   standard_name = time_step_for_dynamics
   long_name = dynamics timestep
@@ -1909,6 +1909,15 @@
   standard_name = gas_constant_dry_air
   long_name = ideal gas constant for dry air
   units = J kg-1 K-1
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = F
+[con_eps]
+  standard_name = ratio_of_dry_air_to_water_vapor_gas_constants
+  long_name = rd/rv
+  units = none
   dimensions = ()
   type = real
   kind = kind_phys
