@@ -266,7 +266,10 @@ module mp_nsslg
          integer         :: ids,ide, jds,jde, kds,kde, &
                             ims,ime, jms,jme, kms,kme, &
                             its,ite, jts,jte, kts,kte, i,j,k
-         integer :: itimestep = 0 ! timestep counter
+         !integer :: itimestep = 0 ! timestep counter
+! Fix reproducibility issue 
+         integer :: itimestep ! timestep counter
+
          integer :: ntmul, n
          real, parameter    :: dtpmax = 300. ! 600. ! 120.
          real(kind_phys)    :: dtptmp
