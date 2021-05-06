@@ -483,6 +483,7 @@
     subroutine GFS_suite_interstitial_3_run (im, levs, nn, cscnv,       &
                satmedmf, trans_trac, do_shoc, ltaerosol, ntrac, ntcw,   &
                ntiw, ntclamt, ntrw, ntsw, ntrnc, ntsnc, ntgl, ntgnc,    &
+               ntccn, nthl, nthnc, ntgv, nthv,                          &
                xlon, xlat, gt0, gq0, imp_physics, imp_physics_mg,       &
                imp_physics_zhao_carr, imp_physics_zhao_carr_pdf,        &
 ! Dong
@@ -501,10 +502,12 @@
       implicit none
 
       ! interface variables
-      logical, intent(in)     :: otsptflag(1:ntracp1)!  on/off switch for tracer transport
-      integer, intent(in)     :: ntracp1
+!      logical, intent(in)     :: otsptflag(1:ntracp1)!  on/off switch for tracer transport
+!      integer, intent(in)     :: ntracp1
       integer,                                          intent(in) :: im, levs, nn, ntrac, ntcw, ntiw, ntclamt, ntrw,   &
-        ntsw, ntrnc, ntsnc, ntgl, ntgnc, imp_physics, imp_physics_mg, imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, &
+        ntsw, ntrnc, ntsnc, ntgl, ntgnc, &
+        ntccn, nthl, nthnc, ntgv, nthv,                          &
+        imp_physics, imp_physics_mg, imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, &
         imp_physics_gfdl, imp_physics_thompson, imp_physics_wsm6,imp_physics_fer_hires, imp_physics_nssl2m,             &
         imp_physics_nssl2mccn, me
       integer, dimension(im),                           intent(in) :: islmsk, kpbl, kinver
@@ -546,10 +549,14 @@
       if (cscnv .or. satmedmf .or. trans_trac .or. ras) then
         tracers = 2
         do n=2,ntrac
-!          if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
-!               n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
-!               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc) then
-            IF ( otsptflag(n) ) THEN
+          if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
+               n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
+               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc & 
+               .and. &
+             n /= nthl  .and. n /= nthnc .and. n /= ntgv    .and. &
+             n /= nthv .and. n /= ntccn  &
+                                                               ) then
+!            IF ( otsptflag(n) ) THEN
             tracers = tracers + 1
             do k=1,levs
               do i=1,im
@@ -673,7 +680,9 @@
 !      imp_physics_nssl2mccn, nssl_invertccn,                                                              
 !      dtf, save_qc,save_qi, con_pi, gq0, clw, prsl, save_tcp, con_rd, nwfa, spechum, dqdti,   
 !      otsptflag, ntracp1, errmsg, errflg)
-      ntrw, ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn, imp_physics, imp_physics_gfdl, imp_physics_thompson,  &
+      ntrw, ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn, &
+      ntccn, nthl, nthnc, ntgv, nthv,                          &
+      imp_physics, imp_physics_gfdl, imp_physics_thompson,  &
       imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, imp_physics_nssl2m, imp_physics_nssl2mccn, nssl_invertccn,   &              
       convert_dry_rho, dtf, save_qc, save_qi, con_pi,              &
       gq0, clw, prsl, save_tcp, con_rd, con_eps, nwfa, spechum, dqdti, errmsg, errflg)
@@ -687,10 +696,12 @@
 
       ! interface variables
 
-      logical, intent(in)     :: otsptflag(1:ntracp1)! on/off switch for tracer transport by updraft and
-      integer, intent(in)     :: ntracp1
+!      logical, intent(in)     :: otsptflag(1:ntracp1)! on/off switch for tracer transport by updraft and
+!      integer, intent(in)     :: ntracp1
       integer,                                  intent(in) :: im, levs, tracers_total, ntrac, ntcw, ntiw, ntclamt, ntrw,  &
-        ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn, ntccn, imp_physics, imp_physics_gfdl, imp_physics_thompson,    &
+        ntsw, ntrnc, ntsnc, ntgl, ntgnc, ntlnc, ntinc, nn,       & 
+        ntccn, nthl, nthnc, ntgv, nthv,                          &
+        imp_physics, imp_physics_gfdl, imp_physics_thompson,    &
         imp_physics_zhao_carr, imp_physics_zhao_carr_pdf, imp_physics_nssl2m, imp_physics_nssl2mccn
 
       logical,                                  intent(in) :: nssl_invertccn
@@ -739,14 +750,14 @@
         tracers = 2
         do n=2,ntrac
 !         if ( n /= ntcw .and. n /= ntiw .and. n /= ntclamt) then
-!          if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
-!               n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
-!               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc  &
-!               .and. &
-!             n /= nthl  .and. n /= nthnc .and. n /= ntgv    .and. &
-!             n /= nthv .and. n /= ntccn  &
-!                                                               ) then
-           IF ( otsptflag(n) ) THEN                                                    
+          if ( n /= ntcw  .and. n /= ntiw  .and. n /= ntclamt .and. &
+               n /= ntrw  .and. n /= ntsw  .and. n /= ntrnc   .and. &
+               n /= ntsnc .and. n /= ntgl  .and. n /= ntgnc  &
+               .and. &
+             n /= nthl  .and. n /= nthnc .and. n /= ntgv    .and. &
+             n /= nthv .and. n /= ntccn  &
+                                                               ) then
+!           IF ( otsptflag(n) ) THEN                                                    
               tracers = tracers + 1
             do k=1,levs
               do i=1,im
