@@ -1139,22 +1139,6 @@
 [ccpp-arg-table]
   name = GFS_suite_interstitial_3_run
   type = scheme
-[otsptflag]
-  standard_name = flag_convective_tracer_transport_interstitial
-  long_name = flag for interstitial tracer transport
-  units = flag
-  dimensions = (number_of_tracers_plus_one)
-  type = logical
-  intent = in
-  optional = F
-[ntracp1]
-  standard_name = number_of_tracers_plus_one
-  long_name = number of tracers plus one
-  units = count
-  dimensions = ()
-  type = integer
-  intent = in
-  optional = F
 [im]
   standard_name = horizontal_loop_extent
   long_name = horizontal loop extent
@@ -1294,6 +1278,46 @@
 [ntgnc]
   standard_name = index_for_graupel_number_concentration
   long_name = tracer index for graupel number concentration
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[ntccn]
+  standard_name = index_for_cloud_condensation_nuclei_number_concentration
+  long_name = tracer index for cloud condensation nuclei number concentration
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[nthl]
+  standard_name = index_for_hail
+  long_name = tracer index for hail
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[nthnc]
+  standard_name = index_for_hail_number_concentration
+  long_name = tracer index for hail number concentration
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[ntgv]
+  standard_name = index_for_graupel_volume
+  long_name = tracer index for graupel particle volume
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[nthv]
+  standard_name = index_for_hail_volume
+  long_name = tracer index for hail particle volume
   units = index
   dimensions = ()
   type = integer
@@ -1603,7 +1627,7 @@
 [ccpp-table-properties]
   name = GFS_suite_interstitial_4
   type = scheme
-  dependencies = machine.F,module_mp_thompson_make_number_concentrations.F90,module_mp_nssl_2mom.F90
+  dependencies = machine.F,module_mp_thompson_make_number_concentrations.F90
 
 ########################################################################
 [ccpp-arg-table]
@@ -1756,6 +1780,38 @@
 [ntccn]
   standard_name = index_for_cloud_condensation_nuclei_number_concentration
   long_name = tracer index for cloud condensation nuclei number concentration
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[nthl]
+  standard_name = index_for_hail
+  long_name = tracer index for hail
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[nthnc]
+  standard_name = index_for_hail_number_concentration
+  long_name = tracer index for hail number concentration
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[ntgv]
+  standard_name = index_for_graupel_volume
+  long_name = tracer index for graupel particle volume
+  units = index
+  dimensions = ()
+  type = integer
+  intent = in
+  optional = F
+[nthv]
+  standard_name = index_for_hail_volume
+  long_name = tracer index for hail particle volume
   units = index
   dimensions = ()
   type = integer
@@ -1949,22 +2005,6 @@
   type = real
   kind = kind_phys
   intent = inout
-  optional = F
-[otsptflag]
-  standard_name = flag_convective_tracer_transport_interstitial
-  long_name = flag for interstitial tracer transport
-  units = flag
-  dimensions = (number_of_tracers_plus_one)
-  type = logical
-  intent = in
-  optional = F
-[ntracp1]
-  standard_name = number_of_tracers_plus_one
-  long_name = number of tracers plus one
-  units = count
-  dimensions = ()
-  type = integer
-  intent = in
   optional = F
 [errmsg]
   standard_name = ccpp_error_message
