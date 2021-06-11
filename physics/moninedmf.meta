@@ -7,6 +7,14 @@
 [ccpp-arg-table]
   name = hedmf_init
   type = scheme
+[hybedmf]
+  standard_name = flag_for_hedmf
+  long_name = flag for hybrid edmf pbl scheme (moninedmf)
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+  optional = F
 [moninq_fac]
   standard_name = atmosphere_diffusivity_coefficient_factor
   long_name = multiplicative constant for atmospheric diffusivities
@@ -421,18 +429,18 @@
   optional = F
 [dkt]
   standard_name = atmosphere_heat_diffusivity
-  long_name = diffusivity for heat
+  long_name = atmospheric heat diffusivity
   units = m2 s-1
-  dimensions = (horizontal_loop_extent,vertical_dimension_minus_one)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = out
   optional = F
 [dku]
   standard_name = atmosphere_momentum_diffusivity
-  long_name = diffusivity for momentum
+  long_name = atmospheric momentum diffusivity
   units = m2 s-1
-  dimensions = (horizontal_loop_extent,vertical_dimension_minus_one)
+  dimensions = (horizontal_loop_extent,vertical_dimension)
   type = real
   kind = kind_phys
   intent = out
