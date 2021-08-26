@@ -46,14 +46,16 @@ contains
                    ntrac,ntso2,ntpp25,ntbc1,ntoc1,ntpp10,                        &
                    gq0,qgrs,ebu,abem,biomass_burn_opt_in,plumerise_flag_in,      &
                    plumerisefire_frq_in,pert_scale_plume,                        &
-                   emis_amp_plume, do_sppt_emis, sppt_wts, errmsg,errflg)
+                   pert_scale_plume_gbbepx, emis_amp_plume,                      &
+                   emis_amp_plume_gbbepx, do_sppt_emis, sppt_wts, errmsg,errflg)
 
     implicit none
 
 
     integer,        intent(in) :: im,kte,kme,ktau
     integer,        intent(in) :: ntrac,ntso2,ntpp25,ntbc1,ntoc1,ntpp10
-    real(kind_phys),intent(in) :: dt, emis_amp_plume, pert_scale_plume
+    real(kind_phys),intent(in) :: dt, emis_amp_plume, emis_amp_plume_gbbepx, &
+                                  pert_scale_plume, pert_scale_plume_gbbepx
 
     integer, parameter :: ids=1,jds=1,jde=1, kds=1
     integer, parameter :: ims=1,jms=1,jme=1, kms=1
@@ -100,7 +102,7 @@ contains
 
 !>-- local variables
     real(kind_phys) :: curr_secs
-    real(kind_phys) :: factor, factor2, factor3, random_factor(ims:im)
+    real(kind_phys) :: factor, factor2, factor3, random_factor(ims:im), random_factor_gbbepx(ims:im)
     integer :: nbegin
     integer :: i, j, jp, k, kp, n
   
@@ -112,6 +114,7 @@ contains
     plumerise_flag    = plumerise_flag_in
     plumerisefire_frq = plumerisefire_frq_in
     random_factor = 1.0
+    random_factor_gbbepx = 1.0
     curr_secs = ktau * dt
 
     ! -- set domain
@@ -139,6 +142,16 @@ contains
       dtstep = dt
     end if
 
+    
+    if(plumerise_flag == FIRE_OPT_GBBEPx .and. do_sppt_emis) then
+      if(biomass_burn_opt == BURN_OPT_ENABLE) then
+        random_factor(:) = pert_scale_plume*max(min(1+(sppt_wts(:,kme/2)-1)*emis_amp_plume,2.0),0.0)
+      endif
+      random_factor_gbbepx(:) = pert_scale_plume_gbbepx*max(min(1+(sppt_wts(:,kme/2)-1)*emis_amp_plume_gbbepx,2.0),0.0)
+      endif
+
+
+
 !>- get ready for chemistry run
     call gsd_chem_prep_plume(ktau,dtstep,                               &
         pr3d,ph3d,phl3d,tk3d,prl3d,us3d,vs3d,spechum,w,                 &
@@ -151,6 +164,7 @@ contains
         mean_fct_agtf,mean_fct_agef,mean_fct_agsv,mean_fct_aggr,        &
         firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,        &
         moist,chem,plume_frp,ebu_in,ivgtyp,                             &
+        do_sppt_emis, random_factor_gbbepx,                             &
         ids,ide, jds,jde, kds,kde,                                      &
         ims,ime, jms,jme, kms,kme,                                      &
         its,ite, jts,jte, kts,kte)
@@ -173,10 +187,6 @@ contains
     ! -- add biomass burning emissions at every timestep
     if (biomass_burn_opt == BURN_OPT_ENABLE) then
       jp = jte
-
-      if(plumerise_flag == FIRE_OPT_GBBEPx .and. do_sppt_emis) then
-        random_factor(:) = pert_scale_plume*max(min(1+(sppt_wts(:,kme/2)-1)*emis_amp_plume,2.0),0.0)
-      endif
 
       factor3 = 0._kind_phys
       select case (plumerise_flag)
@@ -279,6 +289,7 @@ contains
         firesize_agtf,firesize_agef,firesize_agsv,firesize_aggr,       &
         moist,chem,plumedist,ebu_in,                                   &
         ivgtyp,              &
+        do_sppt_emis, random_factor_gbbepx,                            &
         ids,ide, jds,jde, kds,kde,                                     &
         ims,ime, jms,jme, kms,kme,                                     &
         its,ite, jts,jte, kts,kte)
@@ -286,9 +297,11 @@ contains
     !Chem input configuration
     integer, intent(in) :: ktau
     real(kind=kind_phys), intent(in) :: dtstep
+    logical, intent(in) :: do_sppt_emis
 
     !FV3 input variables
     integer, dimension(ims:ime), intent(in) :: vegtype
+    real, dimension(ims:ime), intent(in) :: random_factor_gbbepx
     integer, intent(in) :: ntrac
     integer, intent(in) :: ntso2,ntpp25,ntbc1,ntoc1,ntpp10
     real(kind=kind_phys), dimension(ims:ime,     5),   intent(in) :: fire_GBBEPx
@@ -463,9 +476,21 @@ contains
           emiss_abu(i,j,p_e_oc)   =fire_GBBEPx(i,2)
           emiss_abu(i,j,p_e_pm_25)=fire_GBBEPx(i,3)
           emiss_abu(i,j,p_e_so2)  =fire_GBBEPx(i,4)
-          plume(i,j,1)            =fire_GBBEPx(i,5)
          enddo
         enddo
+        if(do_sppt_emis) then
+          do j=jts,jte
+            do i=its,ite
+              plume(i,j,1)            =fire_GBBEPx(i,5)*random_factor_gbbepx(i)
+            enddo
+          enddo
+        else
+          do j=jts,jte
+            do i=its,ite
+              plume(i,j,1)            =fire_GBBEPx(i,5)
+            enddo
+          enddo
+        endif
 !        print*,'hli GBBEPx plume',maxval(plume(:,:,1))
       case default
           ! -- no further option available

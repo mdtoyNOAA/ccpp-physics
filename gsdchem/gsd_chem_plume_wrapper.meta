@@ -251,7 +251,34 @@
   optional = F
 [pert_scale_plume]
   standard_name = plume_emissions_scaling_factor
-  long_name = Scaling factor for emissions of plume rising
+  long_name = Scaling factor for non-gbbepx emissions of plume rising
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = F
+[pert_scale_plume_gbbepx]
+  standard_name = plume_gbbepx_emissions_scaling_factor
+  long_name = Scaling factor for gbbepx emissions of plume rising
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = F
+[emis_amp_plume]
+  standard_name = plume_emissions_perturbation_amplitude
+  long_name = multiplier of emissions random perturbation of non-gbbepx plume rise emissions
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+  intent = in
+  optional = F
+[emis_amp_plume_gbbepx]
+  standard_name = plume_gbbepx_emissions_perturbation_amplitude
+  long_name = multiplier of emissions random perturbation of gbbepx plume rise emissions
   units = none
   dimensions = ()
   type = real
@@ -282,13 +309,6 @@
   type = integer
   intent = in
   optional = F
-[emis_amp_plume]
-  standard_name = plume_emissions_perturbation_amplitude
-  long_name = multiplier of emissions random perturbation of plume rise emissions
-  units = none
-  dimensions = ()
-  type = real
-  kind = kind_phys
 [do_sppt_emis]
   standard_name = flag_for_stochastic_emissions_perturbations
   long_name = flag for stochastic emissions perturbations
