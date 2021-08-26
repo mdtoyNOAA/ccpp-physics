@@ -448,7 +448,7 @@ contains
             EXP(-(2.0*reff_dust(n)/lambda)**3.0)*dlndp(n)
        dvol_tot=dvol_tot+dvol(n)
        ! Convert mass flux to volume flux
-       emit_vol=emit/den_dust(n) ! (m s^-1)
+       !emit_vol=emit/den_dust(n) ! (m s^-1)
     END DO
     DO n=1,nmx
        distr_dust(n)=dvol(n)/dvol_tot
@@ -461,7 +461,8 @@ contains
        DO i=1,imx
           DO j=1,jmx
              ! Calculate total mass emitted
-             dsrc = emit_vol*den_dust(n)*distr_dust(n)*dxy(j)*dt1 *random_factor(i,j)  ! (kg)
+             !dsrc = emit_vol*den_dust(n)*distr_dust(n)*dxy(j)*dt1 *random_factor(i,j)  ! (kg)
+             dsrc = emit*distr_dust(n)*dxy(j)*dt1*random_factor(i,j)  ! (kg)
              IF (dsrc < 0.0) dsrc = 0.0
 
              ! Update dust mixing ratio at first model level.
