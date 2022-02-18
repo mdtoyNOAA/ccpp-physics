@@ -2400,11 +2400,27 @@ MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+
 !> - Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
+! Ming Hu: go back to old version for Spring experiment 2021
+      N0_min = gonv_max
+      k_0 = kts
       do k = kte, kts, -1
-         ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 3.0 + 2./7.*(ygra1+8.) + rand1
+         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
+      enddo
+      do k = kte, kts, -1
+         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
+            xslw1 = 4.01 + alog10(mvd_r(k))
+         else
+            xslw1 = 0.01
+         endif
+         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+         zans1 = (3.1 +(100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))) + rand1
+         if (rand1 .ne. 0.0) then
+          zans1 = MAX(2., MIN(zans1, 7.))
+         endif
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+         N0_min = MIN(N0_exp, N0_min)
+         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
@@ -3476,11 +3492,28 @@ MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+
 !> - Calculate y-intercept, slope values for graupel.
 !+---+-----------------------------------------------------------------+
+! Ming Hu: go back to old version for Spring experiment 2021
+
+      N0_min = gonv_max
+      k_0 = kts
       do k = kte, kts, -1
-         ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 3.0 + 2./7.*(ygra1+8.) + rand1
+         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
+      enddo
+      do k = kte, kts, -1
+         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
+            xslw1 = 4.01 + alog10(mvd_r(k))
+         else
+            xslw1 = 0.01
+         endif
+         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+         zans1 = (3.1 +(100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))) + rand1
+         if (rand1 .ne. 0.0) then
+          zans1 = MAX(2., MIN(zans1, 7.))
+         endif
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+         N0_min = MIN(N0_exp, N0_min)
+         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
@@ -3835,12 +3868,15 @@ MODULE module_mp_thompson
            t3_vts = Kap0*csg(1)*ils1**cse(1)
            t4_vts = Kap1*Mrat**mu_s*csg(7)*ils2**cse(7)
            vts = rhof(k)*av_s * (t1_vts+t2_vts)/(t3_vts+t4_vts)
-           if (prr_sml(k) .gt. 0.0) then
-!           vtsk(k) = MAX(vts*vts_boost(k),                             &
-!    &                vts*((vtrk(k)-vts*vts_boost(k))/(temp(k)-T_0)))
-            SR = rs(k)/(rs(k)+rr(k))
-            vtsk(k) = vts*SR + (1.-SR)*vtrk(k)
-            !vtsk1(k)=vtsk(k)
+           if (temp(k).gt. (T_0+0.1)) then
+!Ming Hu: go back to old version for Spring experiment 2021
+            vtsk(k) = MAX(vts*vts_boost(k),                             &
+     &                vts*((vtrk(k)-vts*vts_boost(k))/(temp(k)-T_0))) !
+! DH* The version below is supposed to be a better formulation,
+! but gave worse results in RAPv5/HRRRv4 than the line above.
+                      ! this formulation for RAPv5/HRRRv4, reverted 20 Feb 2020
+!            SR = rs(k)/(rs(k)+rr(k))
+!            vtsk(k) = vts*SR + (1.-SR)*vtrk(k)
            else
             vtsk(k) = vts*vts_boost(k)
             !vtsk1(k)=vtsk(k)
@@ -5811,7 +5847,7 @@ MODULE module_mp_thompson
 !! of frozen species remaining from what initially existed at the
 !! melting level interface.
       subroutine calc_refl10cm (qv1d, qc1d, qr1d, nr1d, qs1d, qg1d, &
-               t1d, p1d, dBZ, rand1, kts, kte, ii, jj, melti,       &
+               t1d, p1d, dBZ, rand1, kts, kte, ii, jj, melti_org,       &
                vt_dBZ, first_time_step)
 
       IMPLICIT NONE
@@ -5846,7 +5882,8 @@ MODULE module_mp_thompson
       DOUBLE PRECISION:: fmelt_s, fmelt_g
 
       INTEGER:: i, k, k_0, kbot, n
-      LOGICAL, INTENT(IN):: melti
+      LOGICAL, INTENT(IN):: melti_org
+      LOGICAL :: melti
       LOGICAL, DIMENSION(kts:kte):: L_qr, L_qs, L_qg
 
       DOUBLE PRECISION:: cback, x, eta, f_d
@@ -5867,6 +5904,11 @@ MODULE module_mp_thompson
          allow_wet_snow = .true.
          allow_wet_graupel = .true.
       endif
+
+!Ming Hu hardwired for Spring Experiment testing
+      allow_wet_snow = .true.
+      allow_wet_graupel = .false.
+      melti=.true.
 
       do k = kts, kte
          dBZ(k) = -35.0
@@ -5979,16 +6021,34 @@ MODULE module_mp_thompson
 !+---+-----------------------------------------------------------------+
 
       if (ANY(L_qg .eqv. .true.)) then
+! Ming Hu: go back to old version for Spring experiment 2021
+
+      N0_min = gonv_max
+      k_0 = kts
       do k = kte, kts, -1
-         ygra1 = alog10(max(1.E-9, rg(k)))
-         zans1 = 3.0 + 2./7.*(ygra1+8.) + rand1
+         if (temp(k).ge.270.65) k_0 = MAX(k_0, k)
+      enddo
+      do k = kte, kts, -1
+         if (k.gt.k_0 .and. L_qr(k) .and. mvd_r(k).gt.100.E-6) then
+            xslw1 = 4.01 + alog10(mvd_r(k))
+         else
+            xslw1 = 0.01
+         endif
+         ygra1 = 4.31 + alog10(max(5.E-5, rg(k)))
+         zans1 = (3.1 +(100./(300.*xslw1*ygra1/(10./xslw1+1.+0.25*ygra1)+30.+10.*ygra1))) + rand1
+         if (rand1 .ne. 0.0) then
+          zans1 = MAX(2., MIN(zans1, 7.))
+         endif
          N0_exp = 10.**(zans1)
          N0_exp = MAX(DBLE(gonv_min), MIN(N0_exp, DBLE(gonv_max)))
+         N0_min = MIN(N0_exp, N0_min)
+         N0_exp = N0_min
          lam_exp = (N0_exp*am_g*cgg(1)/rg(k))**oge1
          lamg = lam_exp * (cgg(3)*ogg2*ogg1)**obmg
          ilamg(k) = 1./lamg
          N0_g(k) = N0_exp/(cgg(2)*lam_exp) * lamg**cge(2)
       enddo
+
       endif
 
 !+---+-----------------------------------------------------------------+

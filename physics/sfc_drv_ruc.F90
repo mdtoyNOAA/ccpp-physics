@@ -1018,8 +1018,8 @@ module lsm_ruc
         cmm_lnd(i) = cm_lnd(i) * wind(i)
         chh_lnd(i) = chs_lnd(i,j) * rho(i)
         !
-        snowh_lnd(i,j) = snwdph_lnd(i) * 0.001         ! convert from mm to m
-        sneqv_lnd(i,j) = weasd_lnd(i)                  ! [mm]
+        snowh_lnd(i,j) = max(1.e-7,snwdph_lnd(i) * 0.001)         ! convert from mm to m
+        sneqv_lnd(i,j) = max(1.e-4,weasd_lnd(i))                  ! [mm]
         snfallac_lnd(i,j) = snowfallac_lnd(i)
         !> -- sanity checks on sneqv and snowh
         if (sneqv_lnd(i,j) /= 0.0 .and. snowh_lnd(i,j) == 0.0) then
