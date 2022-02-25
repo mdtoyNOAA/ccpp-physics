@@ -8,6 +8,7 @@ module module_sf_noahmplsm
   use  module_wrf_utl
 #endif
 use machine ,   only : kind_phys
+use sfc_diff, only   : stability
 
   implicit none
 
@@ -73,7 +74,7 @@ use machine ,   only : kind_phys
 ! =====================================options for different schemes================================
 ! **recommended
 
-  integer :: dveg     ! options for dynamic vegetation: 
+  integer :: dveg     !< options for dynamic vegetation: 
                       !   1 -> off (use table lai; use fveg = shdfac from input)
                       !   2 -> on  (together with opt_crs = 1)
                       !   3 -> off (use table lai; calculate fveg)
@@ -85,16 +86,16 @@ use machine ,   only : kind_phys
                       !   9 -> off (use input LAI; use maximum vegetation fraction)
                       !  10 -> crop model on (use maximum vegetation fraction)
 
-  integer :: opt_crs  ! options for canopy stomatal resistance
+  integer :: opt_crs  !< options for canopy stomatal resistance
                       ! **1 -> ball-berry
 		      !   2 -> jarvis
 
-  integer :: opt_btr  ! options for soil moisture factor for stomatal resistance
+  integer :: opt_btr  !< options for soil moisture factor for stomatal resistance
                       ! **1 -> noah (soil moisture) 
                       !   2 -> clm  (matric potential)
                       !   3 -> ssib (matric potential)
 
-  integer :: opt_run  ! options for runoff and groundwater
+  integer :: opt_run  !< options for runoff and groundwater
                       ! **1 -> topmodel with groundwater (niu et al. 2007 jgr) ;
                       !   2 -> topmodel with an equilibrium water table (niu et al. 2005 jgr) ;
                       !   3 -> original surface and subsurface runoff (free drainage)
@@ -102,59 +103,59 @@ use machine ,   only : kind_phys
                       !   5 -> miguez-macho&fan groundwater scheme (miguez-macho et al. 2007 jgr; fan et al. 2007 jgr)
 		      !          (needs further testing for public use)
 
-  integer :: opt_sfc  ! options for surface layer drag coeff (ch & cm)
+  integer :: opt_sfc  !< options for surface layer drag coeff (ch & cm)
                       ! **1 -> m-o
 		      ! **2 -> original noah (chen97)
 		      ! **3 -> myj consistent; 4->ysu consistent. mb: removed in v3.7 for further testing
 
-  integer :: opt_frz  ! options for supercooled liquid water (or ice fraction)
+  integer :: opt_frz  !< options for supercooled liquid water (or ice fraction)
                       ! **1 -> no iteration (niu and yang, 2006 jhm)
 		      !   2 -> koren's iteration 
 
-  integer :: opt_inf  ! options for frozen soil permeability
+  integer :: opt_inf  !< options for frozen soil permeability
                       ! **1 -> linear effects, more permeable (niu and yang, 2006, jhm)
                       !   2 -> nonlinear effects, less permeable (old)
 
-  integer :: opt_rad  ! options for radiation transfer
+  integer :: opt_rad  !< options for radiation transfer
                       !   1 -> modified two-stream (gap = f(solar angle, 3d structure ...)<1-fveg)
                       !   2 -> two-stream applied to grid-cell (gap = 0)
                       ! **3 -> two-stream applied to vegetated fraction (gap=1-fveg)
 
-  integer :: opt_alb  ! options for ground snow surface albedo
+  integer :: opt_alb  !< options for ground snow surface albedo
                       !   1 -> bats
 		      ! **2 -> class
 
-  integer :: opt_snf  ! options for partitioning  precipitation into rainfall & snowfall
+  integer :: opt_snf  !< options for partitioning  precipitation into rainfall & snowfall
                       ! **1 -> jordan (1991)
 		      !   2 -> bats: when sfctmp<tfrz+2.2 
 		      !   3 -> sfctmp < tfrz
 		      !   4 -> use wrf microphysics output
 
-  integer :: opt_tbot ! options for lower boundary condition of soil temperature
+  integer :: opt_tbot !< options for lower boundary condition of soil temperature
                       !   1 -> zero heat flux from bottom (zbot and tbot not used)
                       ! **2 -> tbot at zbot (8m) read from a file (original noah)
 
-  integer :: opt_stc  ! options for snow/soil temperature time scheme (only layer 1)
+  integer :: opt_stc  !< options for snow/soil temperature time scheme (only layer 1)
                       ! **1 -> semi-implicit; flux top boundary condition
 		      !   2 -> full implicit (original noah); temperature top boundary condition
                       !   3 -> same as 1, but fsno for ts calculation (generally improves snow; v3.7)
 
-  integer :: opt_rsf  ! options for surface resistent to evaporation/sublimation
+  integer :: opt_rsf  !< options for surface resistent to evaporation/sublimation
                       ! **1 -> sakaguchi and zeng, 2009
 		      !   2 -> sellers (1992)
                       !   3 -> adjusted sellers to decrease rsurf for wet soil
 		      !   4 -> option 1 for non-snow; rsurf = rsurf_snow for snow (set in mptable); ad v3.8
 
-  integer :: opt_soil ! options for defining soil properties
+  integer :: opt_soil !< options for defining soil properties
                       ! **1 -> use input dominant soil texture
 		      !   2 -> use input soil texture that varies with depth
                       !   3 -> use soil composition (sand, clay, orgm) and pedotransfer functions (opt_pedo)
 		      !   4 -> use input soil properties (bexp_3d, smcmax_3d, etc.)
 
-  integer :: opt_pedo ! options for pedotransfer functions (used when opt_soil = 3)
+  integer :: opt_pedo !< options for pedotransfer functions (used when opt_soil = 3)
                       ! **1 -> saxton and rawls (2006)
 
-  integer :: opt_crop ! options for crop model
+  integer :: opt_crop !< options for crop model
                       ! **0 -> no crop model, will run default dynamic vegetation
                       !   1 -> liu, et al. 2016
 
@@ -162,23 +163,23 @@ use machine ,   only : kind_phys
 ! physical constants:                                                                      !
 !------------------------------------------------------------------------------------------!
 
-  real (kind=kind_phys), parameter :: grav   = 9.80616   !acceleration due to gravity (m/s2)
-  real (kind=kind_phys), parameter :: sb     = 5.67e-08  !stefan-boltzmann constant (w/m2/k4)
-  real (kind=kind_phys), parameter :: vkc    = 0.40      !von karman constant
-  real (kind=kind_phys), parameter :: tfrz   = 273.16    !freezing/melting point (k)
-  real (kind=kind_phys), parameter :: hsub   = 2.8440e06 !latent heat of sublimation (j/kg)
-  real (kind=kind_phys), parameter :: hvap   = 2.5104e06 !latent heat of vaporization (j/kg)
-  real (kind=kind_phys), parameter :: hfus   = 0.3336e06 !latent heat of fusion (j/kg)
-  real (kind=kind_phys), parameter :: cwat   = 4.188e06  !specific heat capacity of water (j/m3/k)
-  real (kind=kind_phys), parameter :: cice   = 2.094e06  !specific heat capacity of ice (j/m3/k)
-  real (kind=kind_phys), parameter :: cpair  = 1004.64   !heat capacity dry air at const pres (j/kg/k)
-  real (kind=kind_phys), parameter :: tkwat  = 0.6       !thermal conductivity of water (w/m/k)
-  real (kind=kind_phys), parameter :: tkice  = 2.2       !thermal conductivity of ice (w/m/k)
-  real (kind=kind_phys), parameter :: tkair  = 0.023     !thermal conductivity of air (w/m/k) (not used mb: 20140718)
-  real (kind=kind_phys), parameter :: rair   = 287.04    !gas constant for dry air (j/kg/k)
-  real (kind=kind_phys), parameter :: rw     = 461.269   !gas constant for  water vapor (j/kg/k)
-  real (kind=kind_phys), parameter :: denh2o = 1000.     !density of water (kg/m3)
-  real (kind=kind_phys), parameter :: denice = 917.      !density of ice (kg/m3)
+  real (kind=kind_phys), parameter :: grav   = 9.80616   !< acceleration due to gravity (m/s2)
+  real (kind=kind_phys), parameter :: sb     = 5.67e-08  !< stefan-boltzmann constant (w/m2/k4)
+  real (kind=kind_phys), parameter :: vkc    = 0.40      !< von karman constant
+  real (kind=kind_phys), parameter :: tfrz   = 273.16    !< freezing/melting point (k)
+  real (kind=kind_phys), parameter :: hsub   = 2.8440e06 !< latent heat of sublimation (j/kg)
+  real (kind=kind_phys), parameter :: hvap   = 2.5104e06 !< latent heat of vaporization (j/kg)
+  real (kind=kind_phys), parameter :: hfus   = 0.3336e06 !< latent heat of fusion (j/kg)
+  real (kind=kind_phys), parameter :: cwat   = 4.188e06  !< specific heat capacity of water (j/m3/k)
+  real (kind=kind_phys), parameter :: cice   = 2.094e06  !< specific heat capacity of ice (j/m3/k)
+  real (kind=kind_phys), parameter :: cpair  = 1004.64   !< heat capacity dry air at const pres (j/kg/k)
+  real (kind=kind_phys), parameter :: tkwat  = 0.6       !< thermal conductivity of water (w/m/k)
+  real (kind=kind_phys), parameter :: tkice  = 2.2       !< thermal conductivity of ice (w/m/k)
+  real (kind=kind_phys), parameter :: tkair  = 0.023     !< thermal conductivity of air (w/m/k) (not used mb: 20140718)
+  real (kind=kind_phys), parameter :: rair   = 287.04    !< gas constant for dry air (j/kg/k)
+  real (kind=kind_phys), parameter :: rw     = 461.269   !< gas constant for  water vapor (j/kg/k)
+  real (kind=kind_phys), parameter :: denh2o = 1000.     !< density of water (kg/m3)
+  real (kind=kind_phys), parameter :: denice = 917.      !< density of ice (kg/m3)
 
   integer, private, parameter :: mband = 2
   integer, private, parameter :: nsoil = 4
@@ -197,60 +198,60 @@ use machine ,   only : kind_phys
     integer :: iscrop
     integer :: eblforest
 
-    real (kind=kind_phys) :: ch2op              !maximum intercepted h2o per unit lai+sai (mm)
-    real (kind=kind_phys) :: dleaf              !characteristic leaf dimension (m)
-    real (kind=kind_phys) :: z0mvt              !momentum roughness length (m)
-    real (kind=kind_phys) :: hvt                !top of canopy (m)
-    real (kind=kind_phys) :: hvb                !bottom of canopy (m)
-    real (kind=kind_phys) :: den                !tree density (no. of trunks per m2)
-    real (kind=kind_phys) :: rc                 !tree crown radius (m)
-    real (kind=kind_phys) :: mfsno              !snowmelt m parameter ()
-    real (kind=kind_phys) :: scffac             !snow cover factor (m)
-    real (kind=kind_phys) :: saim(12)           !monthly stem area index, one-sided
-    real (kind=kind_phys) :: laim(12)           !monthly leaf area index, one-sided
-    real (kind=kind_phys) :: sla                !single-side leaf area per kg [m2/kg]
-    real (kind=kind_phys) :: dilefc             !coeficient for leaf stress death [1/s]
-    real (kind=kind_phys) :: dilefw             !coeficient for leaf stress death [1/s]
-    real (kind=kind_phys) :: fragr              !fraction of growth respiration  !original was 0.3 
-    real (kind=kind_phys) :: ltovrc             !leaf turnover [1/s]
+    real (kind=kind_phys) :: ch2op              !< maximum intercepted h2o per unit lai+sai (mm)
+    real (kind=kind_phys) :: dleaf              !< characteristic leaf dimension (m)
+    real (kind=kind_phys) :: z0mvt              !< momentum roughness length (m)
+    real (kind=kind_phys) :: hvt                !< top of canopy (m)
+    real (kind=kind_phys) :: hvb                !< bottom of canopy (m)
+    real (kind=kind_phys) :: den                !< tree density (no. of trunks per m2)
+    real (kind=kind_phys) :: rc                 !< tree crown radius (m)
+    real (kind=kind_phys) :: mfsno              !< snowmelt m parameter ()
+    real (kind=kind_phys) :: scffac             !< snow cover factor (m)
+    real (kind=kind_phys) :: saim(12)           !< monthly stem area index, one-sided
+    real (kind=kind_phys) :: laim(12)           !< monthly leaf area index, one-sided
+    real (kind=kind_phys) :: sla                !< single-side leaf area per kg [m2/kg]
+    real (kind=kind_phys) :: dilefc             !< coeficient for leaf stress death [1/s]
+    real (kind=kind_phys) :: dilefw             !< coeficient for leaf stress death [1/s]
+    real (kind=kind_phys) :: fragr              !< fraction of growth respiration  !original was 0.3 
+    real (kind=kind_phys) :: ltovrc             !< leaf turnover [1/s]
 
-    real (kind=kind_phys) :: c3psn              !photosynthetic pathway: 0. = c4, 1. = c3
-    real (kind=kind_phys) :: kc25               !co2 michaelis-menten constant at 25c (pa)
-    real (kind=kind_phys) :: akc                !q10 for kc25
-    real (kind=kind_phys) :: ko25               !o2 michaelis-menten constant at 25c (pa)
-    real (kind=kind_phys) :: ako                !q10 for ko25
-    real (kind=kind_phys) :: vcmx25             !maximum rate of carboxylation at 25c (umol co2/m**2/s)
-    real (kind=kind_phys) :: avcmx              !q10 for vcmx25
-    real (kind=kind_phys) :: bp                 !minimum leaf conductance (umol/m**2/s)
-    real (kind=kind_phys) :: mp                 !slope of conductance-to-photosynthesis relationship
-    real (kind=kind_phys) :: qe25               !quantum efficiency at 25c (umol co2 / umol photon)
-    real (kind=kind_phys) :: aqe                !q10 for qe25
-    real (kind=kind_phys) :: rmf25              !leaf maintenance respiration at 25c (umol co2/m**2/s)
-    real (kind=kind_phys) :: rms25              !stem maintenance respiration at 25c (umol co2/kg bio/s)
-    real (kind=kind_phys) :: rmr25              !root maintenance respiration at 25c (umol co2/kg bio/s)
-    real (kind=kind_phys) :: arm                !q10 for maintenance respiration
-    real (kind=kind_phys) :: folnmx             !foliage nitrogen concentration when f(n)=1 (%)
-    real (kind=kind_phys) :: tmin               !minimum temperature for photosynthesis (k)
+    real (kind=kind_phys) :: c3psn              !< photosynthetic pathway: 0. = c4, 1. = c3
+    real (kind=kind_phys) :: kc25               !< co2 michaelis-menten constant at 25c (pa)
+    real (kind=kind_phys) :: akc                !< q10 for kc25
+    real (kind=kind_phys) :: ko25               !< o2 michaelis-menten constant at 25c (pa)
+    real (kind=kind_phys) :: ako                !< q10 for ko25
+    real (kind=kind_phys) :: vcmx25             !< maximum rate of carboxylation at 25c (umol co2/m**2/s)
+    real (kind=kind_phys) :: avcmx              !< q10 for vcmx25
+    real (kind=kind_phys) :: bp                 !< minimum leaf conductance (umol/m**2/s)
+    real (kind=kind_phys) :: mp                 !< slope of conductance-to-photosynthesis relationship
+    real (kind=kind_phys) :: qe25               !< quantum efficiency at 25c (umol co2 / umol photon)
+    real (kind=kind_phys) :: aqe                !< q10 for qe25
+    real (kind=kind_phys) :: rmf25              !< leaf maintenance respiration at 25c (umol co2/m**2/s)
+    real (kind=kind_phys) :: rms25              !< stem maintenance respiration at 25c (umol co2/kg bio/s)
+    real (kind=kind_phys) :: rmr25              !< root maintenance respiration at 25c (umol co2/kg bio/s)
+    real (kind=kind_phys) :: arm                !< q10 for maintenance respiration
+    real (kind=kind_phys) :: folnmx             !< foliage nitrogen concentration when f(n)=1 (%)
+    real (kind=kind_phys) :: tmin               !< minimum temperature for photosynthesis (k)
        
-    real (kind=kind_phys) :: xl                 !leaf/stem orientation index
-    real (kind=kind_phys) :: rhol(mband)        !leaf reflectance: 1=vis, 2=nir
-    real (kind=kind_phys) :: rhos(mband)        !stem reflectance: 1=vis, 2=nir
-    real (kind=kind_phys) :: taul(mband)        !leaf transmittance: 1=vis, 2=nir
-    real (kind=kind_phys) :: taus(mband)        !stem transmittance: 1=vis, 2=nir
+    real (kind=kind_phys) :: xl                 !< leaf/stem orientation index
+    real (kind=kind_phys) :: rhol(mband)        !< leaf reflectance: 1=vis, 2=nir
+    real (kind=kind_phys) :: rhos(mband)        !< stem reflectance: 1=vis, 2=nir
+    real (kind=kind_phys) :: taul(mband)        !< leaf transmittance: 1=vis, 2=nir
+    real (kind=kind_phys) :: taus(mband)        !< stem transmittance: 1=vis, 2=nir
 
-    real (kind=kind_phys) :: mrp                !microbial respiration parameter (umol co2 /kg c/ s)
-    real (kind=kind_phys) :: cwpvt              !empirical canopy wind parameter
+    real (kind=kind_phys) :: mrp                !< microbial respiration parameter (umol co2 /kg c/ s)
+    real (kind=kind_phys) :: cwpvt              !< empirical canopy wind parameter
 
-    real (kind=kind_phys) :: wrrat              !wood to non-wood ratio
-    real (kind=kind_phys) :: wdpool             !wood pool (switch 1 or 0) depending on woody or not [-]
-    real (kind=kind_phys) :: tdlef              !characteristic t for leaf freezing [k]
+    real (kind=kind_phys) :: wrrat              !< wood to non-wood ratio
+    real (kind=kind_phys) :: wdpool             !< wood pool (switch 1 or 0) depending on woody or not [-]
+    real (kind=kind_phys) :: tdlef              !< characteristic t for leaf freezing [k]
 
-  integer :: nroot              !number of soil layers with root present
-     real (kind=kind_phys) :: rgl                !parameter used in radiation stress function
-     real (kind=kind_phys) :: rsmin              !minimum stomatal resistance [s m-1]
-     real (kind=kind_phys) :: hs                 !parameter used in vapor pressure deficit function
-     real (kind=kind_phys) :: topt               !optimum transpiration air temperature [k]
-     real (kind=kind_phys) :: rsmax              !maximal stomatal resistance [s m-1]
+     integer               :: nroot              !< number of soil layers with root present
+     real (kind=kind_phys) :: rgl                !< parameter used in radiation stress function
+     real (kind=kind_phys) :: rsmin              !< minimum stomatal resistance [s m-1]
+     real (kind=kind_phys) :: hs                 !< parameter used in vapor pressure deficit function
+     real (kind=kind_phys) :: topt               !< optimum transpiration air temperature [k]
+     real (kind=kind_phys) :: rsmax              !< maximal stomatal resistance [s m-1]
 
      real (kind=kind_phys) :: slarea
      real (kind=kind_phys) :: eps(5)
@@ -259,111 +260,111 @@ use machine ,   only : kind_phys
 ! from the rad section of mptable.tbl
 !------------------------------------------------------------------------------------------!
 
-     real (kind=kind_phys) :: albsat(mband)       !saturated soil albedos: 1=vis, 2=nir
-     real (kind=kind_phys) :: albdry(mband)       !dry soil albedos: 1=vis, 2=nir
-     real (kind=kind_phys) :: albice(mband)       !albedo land ice: 1=vis, 2=nir
-     real (kind=kind_phys) :: alblak(mband)       !albedo frozen lakes: 1=vis, 2=nir
-     real (kind=kind_phys) :: omegas(mband)       !two-stream parameter omega for snow
-     real (kind=kind_phys) :: betads              !two-stream parameter betad for snow
-     real (kind=kind_phys) :: betais              !two-stream parameter betad for snow
-     real (kind=kind_phys) :: eg(2)               !emissivity
+     real (kind=kind_phys) :: albsat(mband)       !< saturated soil albedos: 1=vis, 2=nir
+     real (kind=kind_phys) :: albdry(mband)       !< dry soil albedos: 1=vis, 2=nir
+     real (kind=kind_phys) :: albice(mband)       !< albedo land ice: 1=vis, 2=nir
+     real (kind=kind_phys) :: alblak(mband)       !< albedo frozen lakes: 1=vis, 2=nir
+     real (kind=kind_phys) :: omegas(mband)       !< two-stream parameter omega for snow
+     real (kind=kind_phys) :: betads              !< two-stream parameter betad for snow
+     real (kind=kind_phys) :: betais              !< two-stream parameter betad for snow
+     real (kind=kind_phys) :: eg(2)               !< emissivity
 
 !------------------------------------------------------------------------------------------!
 ! from the globals section of mptable.tbl
 !------------------------------------------------------------------------------------------!
  
-     real (kind=kind_phys) :: co2          !co2 partial pressure
-     real (kind=kind_phys) :: o2           !o2 partial pressure
-     real (kind=kind_phys) :: timean       !gridcell mean topgraphic index (global mean)
-     real (kind=kind_phys) :: fsatmx       !maximum surface saturated fraction (global mean)
-     real (kind=kind_phys) :: z0sno        !snow surface roughness length (m) (0.002)
-     real (kind=kind_phys) :: ssi          !liquid water holding capacity for snowpack (m3/m3)
-     real (kind=kind_phys) :: snow_ret_fac !snowpack water release timescale factor (1/s)
-     real (kind=kind_phys) :: swemx        !new snow mass to fully cover old snow (mm)
-     real (kind=kind_phys) :: snow_emis    !snow emissivity
-     real (kind=kind_phys) :: tau0         !tau0 from yang97 eqn. 10a
-     real (kind=kind_phys) :: grain_growth !growth from vapor diffusion yang97 eqn. 10b
-     real (kind=kind_phys) :: extra_growth !extra growth near freezing yang97 eqn. 10c
-     real (kind=kind_phys) :: dirt_soot    !dirt and soot term yang97 eqn. 10d
-     real (kind=kind_phys) :: bats_cosz    !zenith angle snow albedo adjustment; b in yang97 eqn. 15
-     real (kind=kind_phys) :: bats_vis_new !new snow visible albedo
-     real (kind=kind_phys) :: bats_nir_new !new snow nir albedo
-     real (kind=kind_phys) :: bats_vis_age !age factor for diffuse visible snow albedo yang97 eqn. 17
-     real (kind=kind_phys) :: bats_nir_age !age factor for diffuse nir snow albedo yang97 eqn. 18
-     real (kind=kind_phys) :: bats_vis_dir !cosz factor for direct visible snow albedo yang97 eqn. 15
-     real (kind=kind_phys) :: bats_nir_dir !cosz factor for direct nir snow albedo yang97 eqn. 16
-     real (kind=kind_phys) :: rsurf_snow   !surface resistance for snow(s/m)
-     real (kind=kind_phys) :: rsurf_exp    !exponent in the shape parameter for soil resistance option 1
+     real (kind=kind_phys) :: co2          !< co2 partial pressure
+     real (kind=kind_phys) :: o2           !< o2 partial pressure
+     real (kind=kind_phys) :: timean       !< gridcell mean topgraphic index (global mean)
+     real (kind=kind_phys) :: fsatmx       !< maximum surface saturated fraction (global mean)
+     real (kind=kind_phys) :: z0sno        !< snow surface roughness length (m) (0.002)
+     real (kind=kind_phys) :: ssi          !< liquid water holding capacity for snowpack (m3/m3)
+     real (kind=kind_phys) :: snow_ret_fac !< snowpack water release timescale factor (1/s)
+     real (kind=kind_phys) :: swemx        !< new snow mass to fully cover old snow (mm)
+     real (kind=kind_phys) :: snow_emis    !< snow emissivity
+     real (kind=kind_phys) :: tau0         !< tau0 from yang97 eqn. 10a
+     real (kind=kind_phys) :: grain_growth !< growth from vapor diffusion yang97 eqn. 10b
+     real (kind=kind_phys) :: extra_growth !< extra growth near freezing yang97 eqn. 10c
+     real (kind=kind_phys) :: dirt_soot    !< dirt and soot term yang97 eqn. 10d
+     real (kind=kind_phys) :: bats_cosz    !< zenith angle snow albedo adjustment; b in yang97 eqn. 15
+     real (kind=kind_phys) :: bats_vis_new !< new snow visible albedo
+     real (kind=kind_phys) :: bats_nir_new !< new snow nir albedo
+     real (kind=kind_phys) :: bats_vis_age !< age factor for diffuse visible snow albedo yang97 eqn. 17
+     real (kind=kind_phys) :: bats_nir_age !< age factor for diffuse nir snow albedo yang97 eqn. 18
+     real (kind=kind_phys) :: bats_vis_dir !< cosz factor for direct visible snow albedo yang97 eqn. 15
+     real (kind=kind_phys) :: bats_nir_dir !< cosz factor for direct nir snow albedo yang97 eqn. 16
+     real (kind=kind_phys) :: rsurf_snow   !< surface resistance for snow(s/m)
+     real (kind=kind_phys) :: rsurf_exp    !< exponent in the shape parameter for soil resistance option 1
 
 !------------------------------------------------------------------------------------------!
 ! from the crop section of mptable.tbl
 !------------------------------------------------------------------------------------------!
  
-  integer :: pltday           ! planting date
-  integer :: hsday            ! harvest date
-     real (kind=kind_phys) :: plantpop         ! plant density [per ha] - used?
-     real (kind=kind_phys) :: irri             ! irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
-     real (kind=kind_phys) :: gddtbase         ! base temperature for gdd accumulation [c]
-     real (kind=kind_phys) :: gddtcut          ! upper temperature for gdd accumulation [c]
-     real (kind=kind_phys) :: gdds1            ! gdd from seeding to emergence
-     real (kind=kind_phys) :: gdds2            ! gdd from seeding to initial vegetative 
-     real (kind=kind_phys) :: gdds3            ! gdd from seeding to post vegetative 
-     real (kind=kind_phys) :: gdds4            ! gdd from seeding to intial reproductive
-     real (kind=kind_phys) :: gdds5            ! gdd from seeding to pysical maturity 
-  integer :: c3c4             ! photosynthetic pathway:  1 = c3 2 = c4
-     real (kind=kind_phys) :: aref             ! reference maximum co2 assimulation rate 
-     real (kind=kind_phys) :: psnrf            ! co2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
-     real (kind=kind_phys) :: i2par            ! fraction of incoming solar radiation to photosynthetically active radiation
-     real (kind=kind_phys) :: tassim0          ! minimum temperature for co2 assimulation [c]
-     real (kind=kind_phys) :: tassim1          ! co2 assimulation linearly increasing until temperature reaches t1 [c]
-     real (kind=kind_phys) :: tassim2          ! co2 assmilation rate remain at aref until temperature reaches t2 [c]
-     real (kind=kind_phys) :: k                ! light extinction coefficient
-     real (kind=kind_phys) :: epsi             ! initial light use efficiency
-     real (kind=kind_phys) :: q10mr            ! q10 for maintainance respiration
-     real (kind=kind_phys) :: foln_mx          ! foliage nitrogen concentration when f(n)=1 (%)
-     real (kind=kind_phys) :: lefreez          ! characteristic t for leaf freezing [k]
-     real (kind=kind_phys) :: dile_fc(nstage)  ! coeficient for temperature leaf stress death [1/s]
-     real (kind=kind_phys) :: dile_fw(nstage)  ! coeficient for water leaf stress death [1/s]
-     real (kind=kind_phys) :: fra_gr           ! fraction of growth respiration 
-     real (kind=kind_phys) :: lf_ovrc(nstage)  ! fraction of leaf turnover  [1/s]
-     real (kind=kind_phys) :: st_ovrc(nstage)  ! fraction of stem turnover  [1/s]
-     real (kind=kind_phys) :: rt_ovrc(nstage)  ! fraction of root tunrover  [1/s]
-     real (kind=kind_phys) :: lfmr25           ! leaf maintenance respiration at 25c [umol co2/m**2  /s]
-     real (kind=kind_phys) :: stmr25           ! stem maintenance respiration at 25c [umol co2/kg bio/s]
-     real (kind=kind_phys) :: rtmr25           ! root maintenance respiration at 25c [umol co2/kg bio/s]
-     real (kind=kind_phys) :: grainmr25        ! grain maintenance respiration at 25c [umol co2/kg bio/s]
-     real (kind=kind_phys) :: lfpt(nstage)     ! fraction of carbohydrate flux to leaf
-     real (kind=kind_phys) :: stpt(nstage)     ! fraction of carbohydrate flux to stem
-     real (kind=kind_phys) :: rtpt(nstage)     ! fraction of carbohydrate flux to root
-     real (kind=kind_phys) :: grainpt(nstage)  ! fraction of carbohydrate flux to grain
-     real (kind=kind_phys) :: bio2lai          ! leaf are per living leaf biomass [m^2/kg]
+     integer               :: pltday           !< planting date
+     integer               :: hsday            !< harvest date
+     real (kind=kind_phys) :: plantpop         !< plant density [per ha] - used?
+     real (kind=kind_phys) :: irri             !< irrigation strategy 0= non-irrigation 1=irrigation (no water-stress)
+     real (kind=kind_phys) :: gddtbase         !< base temperature for gdd accumulation [c]
+     real (kind=kind_phys) :: gddtcut          !< upper temperature for gdd accumulation [c]
+     real (kind=kind_phys) :: gdds1            !< gdd from seeding to emergence
+     real (kind=kind_phys) :: gdds2            !< gdd from seeding to initial vegetative 
+     real (kind=kind_phys) :: gdds3            !< gdd from seeding to post vegetative 
+     real (kind=kind_phys) :: gdds4            !< gdd from seeding to intial reproductive
+     real (kind=kind_phys) :: gdds5            !< gdd from seeding to pysical maturity 
+     integer               :: c3c4             !< photosynthetic pathway:  1 = c3 2 = c4
+     real (kind=kind_phys) :: aref             !< reference maximum co2 assimulation rate 
+     real (kind=kind_phys) :: psnrf            !< co2 assimulation reduction factor(0-1) (caused by non-modeling part,e.g.pest,weeds)
+     real (kind=kind_phys) :: i2par            !< fraction of incoming solar radiation to photosynthetically active radiation
+     real (kind=kind_phys) :: tassim0          !< minimum temperature for co2 assimulation [c]
+     real (kind=kind_phys) :: tassim1          !< co2 assimulation linearly increasing until temperature reaches t1 [c]
+     real (kind=kind_phys) :: tassim2          !< co2 assmilation rate remain at aref until temperature reaches t2 [c]
+     real (kind=kind_phys) :: k                !< light extinction coefficient
+     real (kind=kind_phys) :: epsi             !< initial light use efficiency
+     real (kind=kind_phys) :: q10mr            !< q10 for maintainance respiration
+     real (kind=kind_phys) :: foln_mx          !< foliage nitrogen concentration when f(n)=1 (%)
+     real (kind=kind_phys) :: lefreez          !< characteristic t for leaf freezing [k]
+     real (kind=kind_phys) :: dile_fc(nstage)  !< coeficient for temperature leaf stress death [1/s]
+     real (kind=kind_phys) :: dile_fw(nstage)  !< coeficient for water leaf stress death [1/s]
+     real (kind=kind_phys) :: fra_gr           !< fraction of growth respiration 
+     real (kind=kind_phys) :: lf_ovrc(nstage)  !< fraction of leaf turnover  [1/s]
+     real (kind=kind_phys) :: st_ovrc(nstage)  !< fraction of stem turnover  [1/s]
+     real (kind=kind_phys) :: rt_ovrc(nstage)  !< fraction of root tunrover  [1/s]
+     real (kind=kind_phys) :: lfmr25           !< leaf maintenance respiration at 25c [umol co2/m**2  /s]
+     real (kind=kind_phys) :: stmr25           !< stem maintenance respiration at 25c [umol co2/kg bio/s]
+     real (kind=kind_phys) :: rtmr25           !< root maintenance respiration at 25c [umol co2/kg bio/s]
+     real (kind=kind_phys) :: grainmr25        !< grain maintenance respiration at 25c [umol co2/kg bio/s]
+     real (kind=kind_phys) :: lfpt(nstage)     !< fraction of carbohydrate flux to leaf
+     real (kind=kind_phys) :: stpt(nstage)     !< fraction of carbohydrate flux to stem
+     real (kind=kind_phys) :: rtpt(nstage)     !< fraction of carbohydrate flux to root
+     real (kind=kind_phys) :: grainpt(nstage)  !< fraction of carbohydrate flux to grain
+     real (kind=kind_phys) :: bio2lai          !< leaf are per living leaf biomass [m^2/kg]
 
 !------------------------------------------------------------------------------------------!
 ! from the soilparm.tbl tables, as functions of soil category.
 !------------------------------------------------------------------------------------------!
-     real (kind=kind_phys) :: bexp(nsoil)         !b parameter
-     real (kind=kind_phys) :: smcdry(nsoil)       !dry soil moisture threshold where direct evap from top
+     real (kind=kind_phys) :: bexp(nsoil)         !< b parameter
+     real (kind=kind_phys) :: smcdry(nsoil)       !< dry soil moisture threshold where direct evap from top
                           !layer ends (volumetric) (not used mb: 20140718)
-     real (kind=kind_phys) :: smcwlt(nsoil)       !wilting point soil moisture (volumetric)
-     real (kind=kind_phys) :: smcref(nsoil)       !reference soil moisture (field capacity) (volumetric)
-     real (kind=kind_phys) :: smcmax (nsoil)      !porosity, saturated value of soil moisture (volumetric)
-     real (kind=kind_phys) :: psisat(nsoil)       !saturated soil matric potential
-     real (kind=kind_phys) :: dksat(nsoil)        !saturated soil hydraulic conductivity
-     real (kind=kind_phys) :: dwsat(nsoil)        !saturated soil hydraulic diffusivity
-     real (kind=kind_phys) :: quartz(nsoil)       !soil quartz content
-     real (kind=kind_phys) :: f1           !soil thermal diffusivity/conductivity coef (not used mb: 20140718)
+     real (kind=kind_phys) :: smcwlt(nsoil)       !< wilting point soil moisture (volumetric)
+     real (kind=kind_phys) :: smcref(nsoil)       !< reference soil moisture (field capacity) (volumetric)
+     real (kind=kind_phys) :: smcmax (nsoil)      !< porosity, saturated value of soil moisture (volumetric)
+     real (kind=kind_phys) :: psisat(nsoil)       !< saturated soil matric potential
+     real (kind=kind_phys) :: dksat(nsoil)        !< saturated soil hydraulic conductivity
+     real (kind=kind_phys) :: dwsat(nsoil)        !< saturated soil hydraulic diffusivity
+     real (kind=kind_phys) :: quartz(nsoil)       !< soil quartz content
+     real (kind=kind_phys) :: f1                  !< soil thermal diffusivity/conductivity coef (not used mb: 20140718)
 !------------------------------------------------------------------------------------------!
 ! from the genparm.tbl file
 !------------------------------------------------------------------------------------------!
-     real (kind=kind_phys) :: slope       !slope index (0 - 1)
-     real (kind=kind_phys) :: csoil       !vol. soil heat capacity [j/m3/k]
-     real (kind=kind_phys) :: zbot        !depth (m) of lower boundary soil temperature
-     real (kind=kind_phys) :: czil        !calculate roughness length of heat
+     real (kind=kind_phys) :: slope       !< slope index (0 - 1)
+     real (kind=kind_phys) :: csoil       !< vol. soil heat capacity [j/m3/k]
+     real (kind=kind_phys) :: zbot        !< depth (m) of lower boundary soil temperature
+     real (kind=kind_phys) :: czil        !< calculate roughness length of heat
      real (kind=kind_phys) :: refdk
      real (kind=kind_phys) :: refkdt
 
-     real (kind=kind_phys) :: kdt         !used in compute maximum infiltration rate (in infil)
-     real (kind=kind_phys) :: frzx        !used in compute maximum infiltration rate (in infil)
+     real (kind=kind_phys) :: kdt         !< used in compute maximum infiltration rate (in infil)
+     real (kind=kind_phys) :: frzx        !< used in compute maximum infiltration rate (in infil)
 
   end type noahmp_parameters
 
@@ -377,8 +378,8 @@ contains
                    dt      , dx      , dz8w    , nsoil   , zsoil   , nsnow   , & ! in : model configuration 
                    shdfac  , shdmax  , vegtyp  , ice     , ist     , croptype, & ! in : vegetation/soil characteristics
                    smceq   ,                                                   & ! in : vegetation/soil characteristics
-                   sfctmp  , sfcprs  , psfc    , uu      , vv      , q2      , & ! in : forcing
-                   qc      , soldn   , lwdn    ,                               & ! in : forcing
+                   sfctmp  , sfcprs  , psfc    , uu      , vv , q2, garea1   , & ! in : forcing
+                   qc      , soldn   , lwdn,thsfc_loc, prslkix,prsik1x,prslk1x,& ! in : forcing
 	           prcpconv, prcpnonc, prcpshcv, prcpsnow, prcpgrpl, prcphail, & ! in : forcing
                    tbot    , co2air  , o2air   , foln    , ficeold , zlvl    , & ! in : forcing
                    albold  , sneqvo  ,                                         & ! in/out : 
@@ -389,15 +390,15 @@ contains
                    stmass  , wood    , stblcp  , fastcp  , lai     , sai     , & ! in/out : 
                    cm      , ch      , tauss   ,                               & ! in/out : 
                    grain   , gdd     , pgs     ,                               & ! in/out 
-                   smcwtd  ,deeprech , rech    ,                               & ! in/out :
-		   z0wrf   , &
+                   smcwtd  ,deeprech , rech    , ustarx  ,                     & ! in/out :
+		   z0wrf   , z0hwrf  , ts      ,                               & ! out :
                    fsa     , fsr     , fira    , fsh     , ssoil   , fcev    , & ! out : 
                    fgev    , fctr    , ecan    , etran   , edir    , trad    , & ! out :
                    tgb     , tgv     , t2mv    , t2mb    , q2v     , q2b     , & ! out :
                    runsrf  , runsub  , apar    , psn     , sav     , sag     , & ! out :
                    fsno    , nee     , gpp     , npp     , fveg    , albedo  , & ! out :
                    qsnbot  , ponding , ponding1, ponding2, rssun   , rssha   , & ! out :
-                   albd    , albi    , albsnd  , albsni  ,                     & ! out :
+                   albd    , albi    , albsnd  , albsni                      , & ! out :
                    bgap    , wgap    , chv     , chb     , emissi  ,           & ! out :
 		   shg     , shc     , shb     , evg     , evb     , ghv     , & ! out :
 		   ghb     , irg     , irc     , irb     , tr      , evc     , & ! out :
@@ -418,129 +419,138 @@ contains
 ! input
   type (noahmp_parameters), intent(in) :: parameters
 
-  integer                        , intent(in)    :: ice    !ice (ice = 1)
-  integer                        , intent(in)    :: ist    !surface type 1->soil; 2->lake
-  integer                        , intent(in)    :: vegtyp !vegetation type 
-  INTEGER                        , INTENT(IN)    :: CROPTYPE !crop type 
-  integer                        , intent(in)    :: nsnow  !maximum no. of snow layers        
-  integer                        , intent(in)    :: nsoil  !no. of soil layers        
-  integer                        , intent(in)    :: iloc   !grid index
-  integer                        , intent(in)    :: jloc   !grid index
-  real (kind=kind_phys)                           , intent(in)    :: dt     !time step [sec]
-  real (kind=kind_phys), dimension(       1:nsoil), intent(in)    :: zsoil  !layer-bottom depth from soil surf (m)
-  real (kind=kind_phys)                           , intent(in)    :: q2     !mixing ratio (kg/kg) lowest model layer
-  real (kind=kind_phys)                           , intent(in)    :: sfctmp !surface air temperature [k]
-  real (kind=kind_phys)                           , intent(in)    :: uu     !wind speed in eastward dir (m/s)
-  real (kind=kind_phys)                           , intent(in)    :: vv     !wind speed in northward dir (m/s)
-  real (kind=kind_phys)                           , intent(in)    :: soldn  !downward shortwave radiation (w/m2)
-  real (kind=kind_phys)                           , intent(in)    :: lwdn   !downward longwave radiation (w/m2)
-  real (kind=kind_phys)                           , intent(in)    :: sfcprs !pressure (pa)
-  real (kind=kind_phys)                           , intent(inout) :: zlvl   !reference height (m)
-  real (kind=kind_phys)                           , intent(in)    :: cosz   !cosine solar zenith angle [0-1]
-  real (kind=kind_phys)                           , intent(in)    :: tbot   !bottom condition for soil temp. [k]
-  real (kind=kind_phys)                           , intent(in)    :: foln   !foliage nitrogen (%) [1-saturated]
-  real (kind=kind_phys)                           , intent(in)    :: shdfac !green vegetation fraction [0.0-1.0]
-  integer                        , intent(in)    :: yearlen!number of days in the particular year.
-  real (kind=kind_phys)                           , intent(in)    :: julian !julian day of year (floating point)
-  real (kind=kind_phys)                           , intent(in)    :: lat    !latitude (radians)
-  real (kind=kind_phys), dimension(-nsnow+1:    0), intent(in)    :: ficeold!ice fraction at last timestep
-  real (kind=kind_phys), dimension(       1:nsoil), intent(in)    :: smceq  !equilibrium soil water  content [m3/m3]
-  real (kind=kind_phys)                           , intent(in)    :: prcpconv ! convective precipitation entering  [mm/s]    ! mb/an : v3.7
-  real (kind=kind_phys)                           , intent(in)    :: prcpnonc ! non-convective precipitation entering [mm/s] ! mb/an : v3.7
-  real (kind=kind_phys)                           , intent(in)    :: prcpshcv ! shallow convective precip entering  [mm/s]   ! mb/an : v3.7
-  real (kind=kind_phys)                           , intent(in)    :: prcpsnow ! snow entering land model [mm/s]              ! mb/an : v3.7
-  real (kind=kind_phys)                           , intent(in)    :: prcpgrpl ! graupel entering land model [mm/s]           ! mb/an : v3.7
-  real (kind=kind_phys)                           , intent(in)    :: prcphail ! hail entering land model [mm/s]              ! mb/an : v3.7
+  integer                        , intent(in)    :: ice    !< ice (ice = 1)
+  integer                        , intent(in)    :: ist    !< surface type 1->soil; 2->lake
+  integer                        , intent(in)    :: vegtyp !< vegetation type 
+  INTEGER                        , INTENT(IN)    :: CROPTYPE !< crop type 
+  integer                        , intent(in)    :: nsnow  !< maximum no. of snow layers        
+  integer                        , intent(in)    :: nsoil  !< no. of soil layers        
+  integer                        , intent(in)    :: iloc   !< grid index
+  integer                        , intent(in)    :: jloc   !< grid index
+  real (kind=kind_phys)                           , intent(in)    :: dt     !< time step [sec]
+  real (kind=kind_phys), dimension(       1:nsoil), intent(in)    :: zsoil  !< layer-bottom depth from soil surf (m)
+  real (kind=kind_phys)                           , intent(in)    :: q2     !< mixing ratio (kg/kg) lowest model layer
+  real (kind=kind_phys)                           , intent(in)    :: sfctmp !< surface air temperature [k]
+  real (kind=kind_phys)                           , intent(in)    :: uu     !< wind speed in eastward dir (m/s)
+  real (kind=kind_phys)                           , intent(in)    :: vv     !< wind speed in northward dir (m/s)
+  real (kind=kind_phys)                           , intent(in)    :: soldn  !< downward shortwave radiation (w/m2)
+  real (kind=kind_phys)                           , intent(in)    :: lwdn   !< downward longwave radiation (w/m2)
+  real (kind=kind_phys)                           , intent(in)    :: sfcprs !< pressure (pa)
+
+  logical                                         , intent(in)    :: thsfc_loc
+  real (kind=kind_phys)                           , intent(in)    :: prslkix !  in exner function
+  real (kind=kind_phys)                           , intent(in)    :: prsik1x !  in exner function
+  real (kind=kind_phys)                           , intent(in)    :: prslk1x !  in exner function
+  real (kind=kind_phys)                           , intent(in)    :: garea1  !  in exner function
+
+  real (kind=kind_phys)                           , intent(inout) :: zlvl   !< reference height (m)
+  real (kind=kind_phys)                           , intent(in)    :: cosz   !< cosine solar zenith angle [0-1]
+  real (kind=kind_phys)                           , intent(in)    :: tbot   !< bottom condition for soil temp. [k]
+  real (kind=kind_phys)                           , intent(in)    :: foln   !< foliage nitrogen (%) [1-saturated]
+  real (kind=kind_phys)                           , intent(in)    :: shdfac !< green vegetation fraction [0.0-1.0]
+  integer                                         , intent(in)    :: yearlen!< number of days in the particular year.
+  real (kind=kind_phys)                           , intent(in)    :: julian !< julian day of year (floating point)
+  real (kind=kind_phys)                           , intent(in)    :: lat    !< latitude (radians)
+  real (kind=kind_phys), dimension(-nsnow+1:    0), intent(in)    :: ficeold!< ice fraction at last timestep
+  real (kind=kind_phys), dimension(       1:nsoil), intent(in)    :: smceq  !< equilibrium soil water  content [m3/m3]
+  real (kind=kind_phys)                           , intent(in)    :: prcpconv !< convective precipitation entering  [mm/s]    ! mb/an : v3.7
+  real (kind=kind_phys)                           , intent(in)    :: prcpnonc !< non-convective precipitation entering [mm/s] ! mb/an : v3.7
+  real (kind=kind_phys)                           , intent(in)    :: prcpshcv !< shallow convective precip entering  [mm/s]   ! mb/an : v3.7
+  real (kind=kind_phys)                           , intent(in)    :: prcpsnow !< snow entering land model [mm/s]              ! mb/an : v3.7
+  real (kind=kind_phys)                           , intent(in)    :: prcpgrpl !< graupel entering land model [mm/s]           ! mb/an : v3.7
+  real (kind=kind_phys)                           , intent(in)    :: prcphail !< hail entering land model [mm/s]              ! mb/an : v3.7
 
 !jref:start; in 
-  real (kind=kind_phys)                           , intent(in)    :: qc     !cloud water mixing ratio
-  real (kind=kind_phys)                           , intent(inout)    :: qsfc   !mixing ratio at lowest model layer
-  real (kind=kind_phys)                           , intent(in)    :: psfc   !pressure at lowest model layer
-  real (kind=kind_phys)                           , intent(in)    :: dz8w   !thickness of lowest layer
+  real (kind=kind_phys)                           , intent(in)    :: qc     !< cloud water mixing ratio
+  real (kind=kind_phys)                           , intent(inout)    :: qsfc   !< mixing ratio at lowest model layer
+  real (kind=kind_phys)                           , intent(in)    :: psfc   !< pressure at lowest model layer
+  real (kind=kind_phys)                           , intent(in)    :: dz8w   !< thickness of lowest layer
   real (kind=kind_phys)                           , intent(in)    :: dx
-  real (kind=kind_phys)                           , intent(in)    :: shdmax  !yearly max vegetation fraction
+  real (kind=kind_phys)                           , intent(in)    :: shdmax  !< yearly max vegetation fraction
 !jref:end
 
 
 ! input/output : need arbitary intial values
-  real (kind=kind_phys)                           , intent(inout) :: qsnow  !snowfall [mm/s]
-  REAL (kind=kind_phys)                           , INTENT(INOUT) :: QRAIN  !rainfall [mm/s]
-  real (kind=kind_phys)                           , intent(inout) :: fwet   !wetted or snowed fraction of canopy (-)
-  real (kind=kind_phys)                           , intent(inout) :: sneqvo !snow mass at last time step (mm)
-  real (kind=kind_phys)                           , intent(inout) :: eah    !canopy air vapor pressure (pa)
-  real (kind=kind_phys)                           , intent(inout) :: tah    !canopy air tmeperature (k)
-  real (kind=kind_phys)                           , intent(inout) :: albold !snow albedo at last time step (class type)
-  real (kind=kind_phys)                           , intent(inout) :: cm     !momentum drag coefficient
-  real (kind=kind_phys)                           , intent(inout) :: ch     !sensible heat exchange coefficient
-  real (kind=kind_phys)                           , intent(inout) :: tauss  !non-dimensional snow age
+  real (kind=kind_phys)                           , intent(inout) :: qsnow  !< snowfall [mm/s]
+  REAL (kind=kind_phys)                           , INTENT(INOUT) :: QRAIN  !< rainfall [mm/s]
+  real (kind=kind_phys)                           , intent(inout) :: fwet   !< wetted or snowed fraction of canopy (-)
+  real (kind=kind_phys)                           , intent(inout) :: sneqvo !< snow mass at last time step (mm)
+  real (kind=kind_phys)                           , intent(inout) :: eah    !< canopy air vapor pressure (pa)
+  real (kind=kind_phys)                           , intent(inout) :: tah    !< canopy air tmeperature (k)
+  real (kind=kind_phys)                           , intent(inout) :: albold !< snow albedo at last time step (class type)
+  real (kind=kind_phys)                           , intent(inout) :: cm     !< momentum drag coefficient
+  real (kind=kind_phys)                           , intent(inout) :: ch     !< sensible heat exchange coefficient
+  real (kind=kind_phys)                           , intent(inout) :: tauss  !< non-dimensional snow age
+  real (kind=kind_phys)                           , intent(inout) :: ustarx !< friction velocity
 
 ! prognostic variables
-  integer                        , intent(inout) :: isnow  !actual no. of snow layers [-]
-  real (kind=kind_phys)                           , intent(inout) :: canliq !intercepted liquid water (mm)
-  real (kind=kind_phys)                           , intent(inout) :: canice !intercepted ice mass (mm)
-  real (kind=kind_phys)                           , intent(inout) :: sneqv  !snow water eqv. [mm]
-  real (kind=kind_phys), dimension(       1:nsoil), intent(inout) :: smc    !soil moisture (ice + liq.) [m3/m3]
-  real (kind=kind_phys), dimension(-nsnow+1:nsoil), intent(inout) :: zsnso  !layer-bottom depth from snow surf [m]
-  real (kind=kind_phys)                           , intent(inout) :: snowh  !snow height [m]
-  real (kind=kind_phys), dimension(-nsnow+1:    0), intent(inout) :: snice  !snow layer ice [mm]
-  real (kind=kind_phys), dimension(-nsnow+1:    0), intent(inout) :: snliq  !snow layer liquid water [mm]
-  real (kind=kind_phys)                           , intent(inout) :: tv     !vegetation temperature (k)
-  real (kind=kind_phys)                           , intent(inout) :: tg     !ground temperature (k)
-  real (kind=kind_phys), dimension(-nsnow+1:nsoil), intent(inout) :: stc    !snow/soil temperature [k]
-  real (kind=kind_phys), dimension(       1:nsoil), intent(inout) :: sh2o   !liquid soil moisture [m3/m3]
-  real (kind=kind_phys)                           , intent(inout) :: zwt    !depth to water table [m]
-  real (kind=kind_phys)                           , intent(inout) :: wa     !water storage in aquifer [mm]
-  real (kind=kind_phys)                           , intent(inout) :: wt     !water in aquifer&saturated soil [mm]
-  real (kind=kind_phys)                           , intent(inout) :: wslake !lake water storage (can be neg.) (mm)
-  real (kind=kind_phys),                            intent(inout) :: smcwtd !soil water content between bottom of the soil and water table [m3/m3]
-  real (kind=kind_phys),                            intent(inout) :: deeprech !recharge to or from the water table when deep [m]
-  real (kind=kind_phys),                            intent(inout) :: rech !recharge to or from the water table when shallow [m] (diagnostic)
+  integer                                         , intent(inout) :: isnow  !< actual no. of snow layers [-]
+  real (kind=kind_phys)                           , intent(inout) :: canliq !< intercepted liquid water (mm)
+  real (kind=kind_phys)                           , intent(inout) :: canice !< intercepted ice mass (mm)
+  real (kind=kind_phys)                           , intent(inout) :: sneqv  !< snow water eqv. [mm]
+  real (kind=kind_phys), dimension(       1:nsoil), intent(inout) :: smc    !< soil moisture (ice + liq.) [m3/m3]
+  real (kind=kind_phys), dimension(-nsnow+1:nsoil), intent(inout) :: zsnso  !< layer-bottom depth from snow surf [m]
+  real (kind=kind_phys)                           , intent(inout) :: snowh  !< snow height [m]
+  real (kind=kind_phys), dimension(-nsnow+1:    0), intent(inout) :: snice  !< snow layer ice [mm]
+  real (kind=kind_phys), dimension(-nsnow+1:    0), intent(inout) :: snliq  !< snow layer liquid water [mm]
+  real (kind=kind_phys)                           , intent(inout) :: tv     !< vegetation temperature (k)
+  real (kind=kind_phys)                           , intent(inout) :: tg     !< ground temperature (k)
+  real (kind=kind_phys), dimension(-nsnow+1:nsoil), intent(inout) :: stc    !< snow/soil temperature [k]
+  real (kind=kind_phys), dimension(       1:nsoil), intent(inout) :: sh2o   !< liquid soil moisture [m3/m3]
+  real (kind=kind_phys)                           , intent(inout) :: zwt    !< depth to water table [m]
+  real (kind=kind_phys)                           , intent(inout) :: wa     !< water storage in aquifer [mm]
+  real (kind=kind_phys)                           , intent(inout) :: wt     !< water in aquifer&saturated soil [mm]
+  real (kind=kind_phys)                           , intent(inout) :: wslake !< lake water storage (can be neg.) (mm)
+  real (kind=kind_phys),                            intent(inout) :: smcwtd !< soil water content between bottom of the soil and water table [m3/m3]
+  real (kind=kind_phys),                            intent(inout) :: deeprech !< recharge to or from the water table when deep [m]
+  real (kind=kind_phys),                            intent(inout) :: rech !< recharge to or from the water table when shallow [m] (diagnostic)
 
 ! output
-  real (kind=kind_phys)                           , intent(out)   :: z0wrf  !combined z0 sent to coupled model
-  real (kind=kind_phys)                           , intent(out)   :: fsa    !total absorbed solar radiation (w/m2)
-  real (kind=kind_phys)                           , intent(out)   :: fsr    !total reflected solar radiation (w/m2)
-  real (kind=kind_phys)                           , intent(out)   :: fira   !total net lw rad (w/m2)  [+ to atm]
-  real (kind=kind_phys)                           , intent(out)   :: fsh    !total sensible heat (w/m2) [+ to atm]
-  real (kind=kind_phys)                           , intent(out)   :: fcev   !canopy evap heat (w/m2) [+ to atm]
-  real (kind=kind_phys)                           , intent(out)   :: fgev   !ground evap heat (w/m2) [+ to atm]
-  real (kind=kind_phys)                           , intent(out)   :: fctr   !transpiration heat (w/m2) [+ to atm]
-  real (kind=kind_phys)                           , intent(out)   :: ssoil  !ground heat flux (w/m2)   [+ to soil]
-  real (kind=kind_phys)                           , intent(out)   :: trad   !surface radiative temperature (k)
-  real (kind=kind_phys)                                           :: ts     !surface temperature (k)
-  real (kind=kind_phys)                           , intent(out)   :: ecan   !evaporation of intercepted water (mm/s)
-  real (kind=kind_phys)                           , intent(out)   :: etran  !transpiration rate (mm/s)
-  real (kind=kind_phys)                           , intent(out)   :: edir   !soil surface evaporation rate (mm/s]
-  real (kind=kind_phys)                           , intent(out)   :: runsrf !surface runoff [mm/s] 
-  real (kind=kind_phys)                           , intent(out)   :: runsub !baseflow (saturation excess) [mm/s]
-  real (kind=kind_phys)                           , intent(out)   :: psn    !total photosynthesis (umol co2/m2/s) [+]
-  real (kind=kind_phys)                           , intent(out)   :: apar   !photosyn active energy by canopy (w/m2)
-  real (kind=kind_phys)                           , intent(out)   :: sav    !solar rad absorbed by veg. (w/m2)
-  real (kind=kind_phys)                           , intent(out)   :: sag    !solar rad absorbed by ground (w/m2)
-  real (kind=kind_phys)                           , intent(out)   :: fsno   !snow cover fraction on the ground (-)
-  real (kind=kind_phys)                           , intent(out)   :: fveg   !green vegetation fraction [0.0-1.0]
-  real (kind=kind_phys)                           , intent(out)   :: albedo !surface albedo [-]
-  real (kind=kind_phys)                                           :: errwat !water error [kg m{-2}]
-  real (kind=kind_phys)                           , intent(out)   :: qsnbot !snowmelt out bottom of pack [mm/s]
-  real (kind=kind_phys)                           , intent(out)   :: ponding!surface ponding [mm]
-  real (kind=kind_phys)                           , intent(out)   :: ponding1!surface ponding [mm]
-  real (kind=kind_phys)                           , intent(out)   :: ponding2!surface ponding [mm]
+  real (kind=kind_phys)                           , intent(out)   :: z0wrf  !< combined z0 sent to coupled model
+  real (kind=kind_phys)                           , intent(out)   :: z0hwrf !< combined z0h sent to coupled model
+  real (kind=kind_phys)                           , intent(out)   :: fsa    !< total absorbed solar radiation (w/m2)
+  real (kind=kind_phys)                           , intent(out)   :: fsr    !< total reflected solar radiation (w/m2)
+  real (kind=kind_phys)                           , intent(out)   :: fira   !< total net lw rad (w/m2)  [+ to atm]
+  real (kind=kind_phys)                           , intent(out)   :: fsh    !< total sensible heat (w/m2) [+ to atm]
+  real (kind=kind_phys)                           , intent(out)   :: fcev   !< canopy evap heat (w/m2) [+ to atm]
+  real (kind=kind_phys)                           , intent(out)   :: fgev   !< ground evap heat (w/m2) [+ to atm]
+  real (kind=kind_phys)                           , intent(out)   :: fctr   !< transpiration heat (w/m2) [+ to atm]
+  real (kind=kind_phys)                           , intent(out)   :: ssoil  !< ground heat flux (w/m2)   [+ to soil]
+  real (kind=kind_phys)                           , intent(out)   :: trad   !< surface radiative temperature (k)
+  real (kind=kind_phys)                           , intent(out)   :: ts     !< surface combined aero temperature (k)
+  real (kind=kind_phys)                           , intent(out)   :: ecan   !< evaporation of intercepted water (mm/s)
+  real (kind=kind_phys)                           , intent(out)   :: etran  !< transpiration rate (mm/s)
+  real (kind=kind_phys)                           , intent(out)   :: edir   !< soil surface evaporation rate (mm/s]
+  real (kind=kind_phys)                           , intent(out)   :: runsrf !< surface runoff [mm/s] 
+  real (kind=kind_phys)                           , intent(out)   :: runsub !< baseflow (saturation excess) [mm/s]
+  real (kind=kind_phys)                           , intent(out)   :: psn    !< total photosynthesis (umol co2/m2/s) [+]
+  real (kind=kind_phys)                           , intent(out)   :: apar   !< photosyn active energy by canopy (w/m2)
+  real (kind=kind_phys)                           , intent(out)   :: sav    !< solar rad absorbed by veg. (w/m2)
+  real (kind=kind_phys)                           , intent(out)   :: sag    !< solar rad absorbed by ground (w/m2)
+  real (kind=kind_phys)                           , intent(out)   :: fsno   !< snow cover fraction on the ground (-)
+  real (kind=kind_phys)                           , intent(out)   :: fveg   !< green vegetation fraction [0.0-1.0]
+  real (kind=kind_phys)                           , intent(out)   :: albedo !< surface albedo [-]
+  real (kind=kind_phys)                                           :: errwat !< water error [kg m{-2}]
+  real (kind=kind_phys)                           , intent(out)   :: qsnbot !< snowmelt out bottom of pack [mm/s]
+  real (kind=kind_phys)                           , intent(out)   :: ponding!< surface ponding [mm]
+  real (kind=kind_phys)                           , intent(out)   :: ponding1!< surface ponding [mm]
+  real (kind=kind_phys)                           , intent(out)   :: ponding2!< surface ponding [mm]
   real (kind=kind_phys)                           , intent(out)   :: esnow
-  real (kind=kind_phys)                           , intent(out)   :: rb        ! leaf boundary layer resistance (s/m)
-  real (kind=kind_phys)                           , intent(out)   :: laisun    ! sunlit leaf area index (m2/m2)
-  real (kind=kind_phys)                           , intent(out)   :: laisha    ! shaded leaf area index (m2/m2)
+  real (kind=kind_phys)                           , intent(out)   :: rb        !< leaf boundary layer resistance (s/m)
+  real (kind=kind_phys)                           , intent(out)   :: laisun    !< sunlit leaf area index (m2/m2)
+  real (kind=kind_phys)                           , intent(out)   :: laisha    !< shaded leaf area index (m2/m2)
 
 !jref:start; output
-  real (kind=kind_phys)                           , intent(out)     :: t2mv   !2-m air temperature over vegetated part [k]
-  real (kind=kind_phys)                           , intent(out)     :: t2mb   !2-m air temperature over bare ground part [k]
-  real (kind=kind_phys), intent(out) :: rssun        !sunlit leaf stomatal resistance (s/m)
-  real (kind=kind_phys), intent(out) :: rssha        !shaded leaf stomatal resistance (s/m)
+  real (kind=kind_phys)                           , intent(out)     :: t2mv   !< 2-m air temperature over vegetated part [k]
+  real (kind=kind_phys)                           , intent(out)     :: t2mb   !< 2-m air temperature over bare ground part [k]
+  real (kind=kind_phys), intent(out) :: rssun        !< sunlit leaf stomatal resistance (s/m)
+  real (kind=kind_phys), intent(out) :: rssha        !< shaded leaf stomatal resistance (s/m)
   real (kind=kind_phys), intent(out) :: bgap
   real (kind=kind_phys), intent(out) :: wgap
-  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albd   !  albedo (direct)
-  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albi   !  albedo (diffuse)
-  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albsnd   !snow albedo (direct)
-  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albsni   !snow albedo (diffuse)
+  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albd   !<  albedo (direct)
+  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albi   !<  albedo (diffuse)
+  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albsnd   !< snow albedo (direct)
+  real (kind=kind_phys), dimension(1:2)           , intent(out)   :: albsni   !< snow albedo (diffuse)
   real (kind=kind_phys), intent(out) :: tgv
   real (kind=kind_phys), intent(out) :: tgb
   real (kind=kind_phys)              :: q1
@@ -552,59 +562,59 @@ contains
 #endif
 
 ! local
-  integer                                        :: iz     !do-loop index
-  integer, dimension(-nsnow+1:nsoil)             :: imelt  !phase change index [1-melt; 2-freeze]
-  real (kind=kind_phys)                                           :: cmc    !intercepted water (canice+canliq) (mm)
-  real (kind=kind_phys)                                           :: taux   !wind stress: e-w (n/m2)
-  real (kind=kind_phys)                                           :: tauy   !wind stress: n-s (n/m2)
-  real (kind=kind_phys)                                           :: rhoair !density air (kg/m3)
-!  real (kind=kind_phys), dimension(       1:    5)                :: vocflx !voc fluxes [ug c m-2 h-1]
-  real (kind=kind_phys), dimension(-nsnow+1:nsoil)                :: dzsnso !snow/soil layer thickness [m]
-  real (kind=kind_phys)                                           :: thair  !potential temperature (k)
-  real (kind=kind_phys)                                           :: qair   !specific humidity (kg/kg) (q2/(1+q2))
-  real (kind=kind_phys)                                           :: eair   !vapor pressure air (pa)
-  real (kind=kind_phys), dimension(       1:    2)                :: solad  !incoming direct solar rad (w/m2)
-  real (kind=kind_phys), dimension(       1:    2)                :: solai  !incoming diffuse solar rad (w/m2)
-  real (kind=kind_phys)                                           :: qprecc !convective precipitation (mm/s)
-  real (kind=kind_phys)                                           :: qprecl !large-scale precipitation (mm/s)
-  real (kind=kind_phys)                                           :: igs    !growing season index (0=off, 1=on)
-  real (kind=kind_phys)                                           :: elai   !leaf area index, after burying by snow
-  real (kind=kind_phys)                                           :: esai   !stem area index, after burying by snow
-  real (kind=kind_phys)                                           :: bevap  !soil water evaporation factor (0 - 1)
-  real (kind=kind_phys), dimension(       1:nsoil)                :: btrani !soil water transpiration factor (0 - 1)
-  real (kind=kind_phys)                                           :: btran  !soil water transpiration factor (0 - 1)
-  real (kind=kind_phys)                                           :: qin    !groundwater recharge [mm/s]
-  real (kind=kind_phys)                                           :: qdis   !groundwater discharge [mm/s]
-  real (kind=kind_phys), dimension(       1:nsoil)                :: sice   !soil ice content (m3/m3)
-  real (kind=kind_phys), dimension(-nsnow+1:    0)                :: snicev !partial volume ice of snow [m3/m3]
-  real (kind=kind_phys), dimension(-nsnow+1:    0)                :: snliqv !partial volume liq of snow [m3/m3]
-  real (kind=kind_phys), dimension(-nsnow+1:    0)                :: epore  !effective porosity [m3/m3]
-  real (kind=kind_phys)                                           :: totsc  !total soil carbon (g/m2)
-  real (kind=kind_phys)                                           :: totlb  !total living carbon (g/m2)
-  real (kind=kind_phys)                                           :: t2m    !2-meter air temperature (k)
-  real (kind=kind_phys)                                           :: qdew   !ground surface dew rate [mm/s]
-  real (kind=kind_phys)                                           :: qvap   !ground surface evap. rate [mm/s]
-  real (kind=kind_phys)                                           :: lathea !latent heat [j/kg]
-  real (kind=kind_phys)                                           :: swdown !downward solar [w/m2]
-  real (kind=kind_phys)                                           :: qmelt  !snowmelt [mm/s]
-  real (kind=kind_phys)                                           :: beg_wb !water storage at begin of a step [mm]
-  real (kind=kind_phys),intent(out)                                              :: irc    !canopy net lw rad. [w/m2] [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: irg    !ground net lw rad. [w/m2] [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: shc    !canopy sen. heat [w/m2]   [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: shg    !ground sen. heat [w/m2]   [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: evg    !ground evap. heat [w/m2]  [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: ghv    !ground heat flux [w/m2]  [+ to soil]
-  real (kind=kind_phys),intent(out)                                              :: irb    !net longwave rad. [w/m2] [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: shb    !sensible heat [w/m2]     [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: evb    !evaporation heat [w/m2]  [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: ghb    !ground heat flux [w/m2] [+ to soil]
-  real (kind=kind_phys),intent(out)                                              :: evc    !canopy evap. heat [w/m2]  [+ to atm]
-  real (kind=kind_phys),intent(out)                                              :: tr     !transpiration heat [w/m2] [+ to atm]
-  real (kind=kind_phys), intent(out)   :: fpice   !snow fraction in precipitation
-  real (kind=kind_phys), intent(out)   :: pahv    !precipitation advected heat - vegetation net (w/m2)
-  real (kind=kind_phys), intent(out)   :: pahg    !precipitation advected heat - under canopy net (w/m2)
-  real (kind=kind_phys), intent(out)   :: pahb    !precipitation advected heat - bare ground net (w/m2)
-  real (kind=kind_phys), intent(out)                                           :: pah     !precipitation advected heat - total (w/m2)
+  integer                                        :: iz     !< do-loop index
+  integer, dimension(-nsnow+1:nsoil)             :: imelt  !< phase change index [1-melt; 2-freeze]
+  real (kind=kind_phys)                                           :: cmc    !< intercepted water (canice+canliq) (mm)
+  real (kind=kind_phys)                                           :: taux   !< wind stress: e-w (n/m2)
+  real (kind=kind_phys)                                           :: tauy   !< wind stress: n-s (n/m2)
+  real (kind=kind_phys)                                           :: rhoair !< density air (kg/m3)
+!  real (kind=kind_phys), dimension(       1:    5)                :: vocflx !< voc fluxes [ug c m-2 h-1]
+  real (kind=kind_phys), dimension(-nsnow+1:nsoil)                :: dzsnso !< snow/soil layer thickness [m]
+  real (kind=kind_phys)                                           :: thair  !< potential temperature (k)
+  real (kind=kind_phys)                                           :: qair   !< specific humidity (kg/kg) (q2/(1+q2))
+  real (kind=kind_phys)                                           :: eair   !< vapor pressure air (pa)
+  real (kind=kind_phys), dimension(       1:    2)                :: solad  !< incoming direct solar rad (w/m2)
+  real (kind=kind_phys), dimension(       1:    2)                :: solai  !< incoming diffuse solar rad (w/m2)
+  real (kind=kind_phys)                                           :: qprecc !< convective precipitation (mm/s)
+  real (kind=kind_phys)                                           :: qprecl !< large-scale precipitation (mm/s)
+  real (kind=kind_phys)                                           :: igs    !< growing season index (0=off, 1=on)
+  real (kind=kind_phys)                                           :: elai   !< leaf area index, after burying by snow
+  real (kind=kind_phys)                                           :: esai   !< stem area index, after burying by snow
+  real (kind=kind_phys)                                           :: bevap  !< soil water evaporation factor (0 - 1)
+  real (kind=kind_phys), dimension(       1:nsoil)                :: btrani !< soil water transpiration factor (0 - 1)
+  real (kind=kind_phys)                                           :: btran  !< soil water transpiration factor (0 - 1)
+  real (kind=kind_phys)                                           :: qin    !< groundwater recharge [mm/s]
+  real (kind=kind_phys)                                           :: qdis   !< groundwater discharge [mm/s]
+  real (kind=kind_phys), dimension(       1:nsoil)                :: sice   !< soil ice content (m3/m3)
+  real (kind=kind_phys), dimension(-nsnow+1:    0)                :: snicev !< partial volume ice of snow [m3/m3]
+  real (kind=kind_phys), dimension(-nsnow+1:    0)                :: snliqv !< partial volume liq of snow [m3/m3]
+  real (kind=kind_phys), dimension(-nsnow+1:    0)                :: epore  !< effective porosity [m3/m3]
+  real (kind=kind_phys)                                           :: totsc  !< total soil carbon (g/m2)
+  real (kind=kind_phys)                                           :: totlb  !< total living carbon (g/m2)
+  real (kind=kind_phys)                                           :: t2m    !< 2-meter air temperature (k)
+  real (kind=kind_phys)                                           :: qdew   !< ground surface dew rate [mm/s]
+  real (kind=kind_phys)                                           :: qvap   !< ground surface evap. rate [mm/s]
+  real (kind=kind_phys)                                           :: lathea !< latent heat [j/kg]
+  real (kind=kind_phys)                                           :: swdown !< downward solar [w/m2]
+  real (kind=kind_phys)                                           :: qmelt  !< snowmelt [mm/s]
+  real (kind=kind_phys)                                           :: beg_wb !< water storage at begin of a step [mm]
+  real (kind=kind_phys),intent(out)                                              :: irc    !< canopy net lw rad. [w/m2] [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: irg    !< ground net lw rad. [w/m2] [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: shc    !< canopy sen. heat [w/m2]   [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: shg    !< ground sen. heat [w/m2]   [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: evg    !< ground evap. heat [w/m2]  [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: ghv    !< ground heat flux [w/m2]  [+ to soil]
+  real (kind=kind_phys),intent(out)                                              :: irb    !< net longwave rad. [w/m2] [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: shb    !< sensible heat [w/m2]     [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: evb    !< evaporation heat [w/m2]  [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: ghb    !< ground heat flux [w/m2] [+ to soil]
+  real (kind=kind_phys),intent(out)                                              :: evc    !< canopy evap. heat [w/m2]  [+ to atm]
+  real (kind=kind_phys),intent(out)                                              :: tr     !< transpiration heat [w/m2] [+ to atm]
+  real (kind=kind_phys), intent(out)   :: fpice   !< snow fraction in precipitation
+  real (kind=kind_phys), intent(out)   :: pahv    !< precipitation advected heat - vegetation net (w/m2)
+  real (kind=kind_phys), intent(out)   :: pahg    !< precipitation advected heat - under canopy net (w/m2)
+  real (kind=kind_phys), intent(out)   :: pahb    !< precipitation advected heat - bare ground net (w/m2)
+  real (kind=kind_phys), intent(out)                                           :: pah     !< precipitation advected heat - total (w/m2)
 
 !jref:start 
   real (kind=kind_phys)                                           :: fsrv
@@ -613,58 +623,58 @@ contains
   real (kind=kind_phys),intent(out)                               :: q2b
   real (kind=kind_phys) :: q2e
   real (kind=kind_phys) :: qfx
-  real (kind=kind_phys),intent(out)                               :: chv    !sensible heat exchange coefficient over vegetated fraction
-  real (kind=kind_phys),intent(out)                               :: chb    !sensible heat exchange coefficient over bare-ground
-  real (kind=kind_phys),intent(out)                               :: chleaf !leaf exchange coefficient
-  real (kind=kind_phys),intent(out)                               :: chuc   !under canopy exchange coefficient
-  real (kind=kind_phys),intent(out)                               :: chv2    !sensible heat exchange coefficient over vegetated fraction
-  real (kind=kind_phys),intent(out)                               :: chb2    !sensible heat exchange coefficient over bare-ground
+  real (kind=kind_phys),intent(out)                               :: chv    !< sensible heat exchange coefficient over vegetated fraction
+  real (kind=kind_phys),intent(out)                               :: chb    !< sensible heat exchange coefficient over bare-ground
+  real (kind=kind_phys),intent(out)                               :: chleaf !< leaf exchange coefficient
+  real (kind=kind_phys),intent(out)                               :: chuc   !< under canopy exchange coefficient
+  real (kind=kind_phys),intent(out)                               :: chv2    !< sensible heat exchange coefficient over vegetated fraction
+  real (kind=kind_phys),intent(out)                               :: chb2    !< sensible heat exchange coefficient over bare-ground
 !jref:end  
 
 ! carbon
 ! inputs
-  real (kind=kind_phys)                           , intent(in)    :: co2air !atmospheric co2 concentration (pa)
-  real (kind=kind_phys)                           , intent(in)    :: o2air  !atmospheric o2 concentration (pa)
+  real (kind=kind_phys)                           , intent(in)    :: co2air !< atmospheric co2 concentration (pa)
+  real (kind=kind_phys)                           , intent(in)    :: o2air  !< atmospheric o2 concentration (pa)
 
 ! inputs and outputs : prognostic variables
-  real (kind=kind_phys)                        , intent(inout)    :: lfmass !leaf mass [g/m2]
-  real (kind=kind_phys)                        , intent(inout)    :: rtmass !mass of fine roots [g/m2]
-  real (kind=kind_phys)                        , intent(inout)    :: stmass !stem mass [g/m2]
-  real (kind=kind_phys)                        , intent(inout)    :: wood   !mass of wood (incl. woody roots) [g/m2]
-  real (kind=kind_phys)                        , intent(inout)    :: stblcp !stable carbon in deep soil [g/m2]
-  real (kind=kind_phys)                        , intent(inout)    :: fastcp !short-lived carbon, shallow soil [g/m2]
-  real (kind=kind_phys)                        , intent(inout)    :: lai    !leaf area index [-]
-  real (kind=kind_phys)                        , intent(inout)    :: sai    !stem area index [-]
-  real (kind=kind_phys)                        , intent(inout)    :: grain  !grain mass [g/m2]
-  real (kind=kind_phys)                        , intent(inout)    :: gdd    !growing degree days
-  integer                                      , intent(inout)    :: pgs    !plant growing stage [-]
+  real (kind=kind_phys)                        , intent(inout)    :: lfmass !< leaf mass [g/m2]
+  real (kind=kind_phys)                        , intent(inout)    :: rtmass !< mass of fine roots [g/m2]
+  real (kind=kind_phys)                        , intent(inout)    :: stmass !< stem mass [g/m2]
+  real (kind=kind_phys)                        , intent(inout)    :: wood   !< mass of wood (incl. woody roots) [g/m2]
+  real (kind=kind_phys)                        , intent(inout)    :: stblcp !< stable carbon in deep soil [g/m2]
+  real (kind=kind_phys)                        , intent(inout)    :: fastcp !< short-lived carbon, shallow soil [g/m2]
+  real (kind=kind_phys)                        , intent(inout)    :: lai    !< leaf area index [-]
+  real (kind=kind_phys)                        , intent(inout)    :: sai    !< stem area index [-]
+  real (kind=kind_phys)                        , intent(inout)    :: grain  !< grain mass [g/m2]
+  real (kind=kind_phys)                        , intent(inout)    :: gdd    !< growing degree days
+  integer                                      , intent(inout)    :: pgs    !< plant growing stage [-]
 
 ! outputs
-  real (kind=kind_phys)                          , intent(out)    :: nee    !net ecosys exchange (g/m2/s co2)
-  real (kind=kind_phys)                          , intent(out)    :: gpp    !net instantaneous assimilation [g/m2/s c]
-  real (kind=kind_phys)                          , intent(out)    :: npp    !net primary productivity [g/m2/s c]
-  real (kind=kind_phys)                                           :: autors !net ecosystem respiration (g/m2/s c)
-  real (kind=kind_phys)                                           :: heters !organic respiration (g/m2/s c)
-  real (kind=kind_phys)                                           :: troot  !root-zone averaged temperature (k)
-  real (kind=kind_phys)                                           :: bdfall   !bulk density of new snow (kg/m3)    ! mb/an: v3.7
-  real (kind=kind_phys)                                           :: rain     !rain rate                   (mm/s)  ! mb/an: v3.7
-  real (kind=kind_phys)                                           :: snow     !liquid equivalent snow rate (mm/s)  ! mb/an: v3.7
+  real (kind=kind_phys)                          , intent(out)    :: nee    !< net ecosys exchange (g/m2/s co2)
+  real (kind=kind_phys)                          , intent(out)    :: gpp    !< net instantaneous assimilation [g/m2/s c]
+  real (kind=kind_phys)                          , intent(out)    :: npp    !< net primary productivity [g/m2/s c]
+  real (kind=kind_phys)                                           :: autors !< net ecosystem respiration (g/m2/s c)
+  real (kind=kind_phys)                                           :: heters !< organic respiration (g/m2/s c)
+  real (kind=kind_phys)                                           :: troot  !< root-zone averaged temperature (k)
+  real (kind=kind_phys)                                           :: bdfall   !< bulk density of new snow (kg/m3)    ! mb/an: v3.7
+  real (kind=kind_phys)                                           :: rain     !< rain rate                   (mm/s)  ! mb/an: v3.7
+  real (kind=kind_phys)                                           :: snow     !< liquid equivalent snow rate (mm/s)  ! mb/an: v3.7
   real (kind=kind_phys)                                           :: fp                                            ! mb/an: v3.7
   real (kind=kind_phys)                                           :: prcp                                          ! mb/an: v3.7
 !more local variables for precip heat mb
-  real (kind=kind_phys)                                           :: qintr   !interception rate for rain (mm/s)
-  real (kind=kind_phys)                                           :: qdripr  !drip rate for rain (mm/s)
-  real (kind=kind_phys)                                           :: qthror  !throughfall for rain (mm/s)
-  real (kind=kind_phys)                                           :: qints   !interception (loading) rate for snowfall (mm/s)
-  real (kind=kind_phys)                                           :: qdrips  !drip (unloading) rate for intercepted snow (mm/s)
-  real (kind=kind_phys)                                           :: qthros  !throughfall of snowfall (mm/s)
-  real (kind=kind_phys)                                           :: snowhin !snow depth increasing rate (m/s)
-  real (kind=kind_phys)                                 :: latheav !latent heat vap./sublimation (j/kg)
-  real (kind=kind_phys)                                 :: latheag !latent heat vap./sublimation (j/kg)
-  logical                             :: frozen_ground ! used to define latent heat pathway
-  logical                             :: frozen_canopy ! used to define latent heat pathway
-  LOGICAL                             :: dveg_active ! flag to run dynamic vegetation
-  LOGICAL                             :: crop_active ! flag to run crop model
+  real (kind=kind_phys)                                           :: qintr   !< interception rate for rain (mm/s)
+  real (kind=kind_phys)                                           :: qdripr  !< drip rate for rain (mm/s)
+  real (kind=kind_phys)                                           :: qthror  !< throughfall for rain (mm/s)
+  real (kind=kind_phys)                                           :: qints   !< interception (loading) rate for snowfall (mm/s)
+  real (kind=kind_phys)                                           :: qdrips  !< drip (unloading) rate for intercepted snow (mm/s)
+  real (kind=kind_phys)                                           :: qthros  !< throughfall of snowfall (mm/s)
+  real (kind=kind_phys)                                           :: snowhin !< snow depth increasing rate (m/s)
+  real (kind=kind_phys)                                 :: latheav !< latent heat vap./sublimation (j/kg)
+  real (kind=kind_phys)                                 :: latheag !< latent heat vap./sublimation (j/kg)
+  logical                             :: frozen_ground !< used to define latent heat pathway
+  logical                             :: frozen_canopy !< used to define latent heat pathway
+  LOGICAL                             :: dveg_active !< flag to run dynamic vegetation
+  LOGICAL                             :: crop_active !< flag to run crop model
   
   ! intent (out) variables need to be assigned a value.  these normally get assigned values
   ! only if dveg == 2.
@@ -761,15 +771,17 @@ contains
                  elai   ,esai   ,fwet   ,foln   ,         & !in
                  fveg   ,pahv   ,pahg   ,pahb   ,                 & !in
                  qsnow  ,dzsnso ,lat    ,canliq ,canice ,iloc, jloc , & !in
-		 z0wrf  ,                                         &
+                 thsfc_loc, prslkix,prsik1x,prslk1x,garea1,       & !in
+		 z0wrf  ,z0hwrf ,                                 & !out
                  imelt  ,snicev ,snliqv ,epore  ,t2m    ,fsno   , & !out
                  sav    ,sag    ,qmelt  ,fsa    ,fsr    ,taux   , & !out
                  tauy   ,fira   ,fsh    ,fcev   ,fgev   ,fctr   , & !out
                  trad   ,psn    ,apar   ,ssoil  ,btrani ,btran  , & !out
-                 ponding,ts     ,latheav , latheag , frozen_canopy,frozen_ground,                         & !out
+                 ponding,ts     ,latheav , latheag , frozen_canopy,frozen_ground,          & !out
                  tv     ,tg     ,stc    ,snowh  ,eah    ,tah    , & !inout
                  sneqvo ,sneqv  ,sh2o   ,smc    ,snice  ,snliq  , & !inout
                  albold ,cm     ,ch     ,dx     ,dz8w   ,q2     , & !inout
+                 ustarx ,                                         & !inout
 #ifdef CCPP
                  tauss  ,laisun ,laisha ,rb , errmsg ,errflg ,    & !inout
 #else
@@ -782,6 +794,8 @@ contains
                  q1     ,q2v    ,q2b    ,q2e    ,chv   ,chb     , & !out
                  emissi ,pah    ,                                 &
 		     shg,shc,shb,evg,evb,ghv,ghb,irg,irc,irb,tr,evc,chleaf,chuc,chv2,chb2 )                                            !out
+
+                 qsfc = q1                         !
 !jref:end
 #ifdef CCPP
     if (errflg /= 0) return
@@ -882,6 +896,7 @@ contains
 !== begin atm ======================================================================================
 
 !>\ingroup NoahMP_LSM
+!! re-precess atmospheric forcing.
   subroutine atm (parameters,sfcprs  ,sfctmp   ,q2      ,                             &
                   prcpconv,prcpnonc ,prcpshcv,prcpsnow,prcpgrpl,prcphail , &
                   soldn   ,cosz     ,thair   ,qair    ,                    & 
@@ -1029,6 +1044,8 @@ contains
 !== begin phenology ================================================================================
 
 !>\ingroup NoahMP_LSM
+!!vegetation phenology considering vegetation canopy being buried by snow and
+!!evolution in time.
   subroutine phenology (parameters,vegtyp ,croptype, snowh  , tv     , lat   , yearlen , julian , & !in
                         lai    , sai    , troot  , elai    , esai   , igs, pgs)
 
@@ -1143,6 +1160,8 @@ endif   ! croptype == 0
 !== begin precip_heat ==============================================================================
 
 !>\ingroup NoahMP_LSM
+!! Michael Barlage: Oct 2013 - Split canwater to calculate precip movement for
+!! tracking of advected heat.
   subroutine precip_heat (parameters,iloc   ,jloc   ,vegtyp ,dt     ,uu     ,vv     , & !in
                           elai   ,esai   ,fveg   ,ist    ,                 & !in
                           bdfall ,rain   ,snow   ,fp     ,                 & !in
@@ -1373,6 +1392,7 @@ endif   ! croptype == 0
 !== begin error ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! check surface energy balance and water balance.
   subroutine error (parameters,swdown ,fsa    ,fsr    ,fira   ,fsh    ,fcev   , &
                     fgev   ,fctr   ,ssoil  ,beg_wb ,canliq ,canice , &
                     sneqv  ,wa     ,smc    ,dzsnso ,prcp   ,ecan   , &
@@ -1567,6 +1587,13 @@ endif   ! croptype == 0
 !== begin energy ===================================================================================
 
 !>\ingroup NoahMP_LSM
+!! We use different approaches to deal with subgrid features of radiation
+!! transfer and turbulent transfer. we use 'tile' approach to compute turbulent 
+!! fluxes,while we use modified two-stream to compute radiation transfer. 
+!! tile approach, assemblying vegetation canopies together,                            
+!! may expose too much ground surfaces (either covered by snow or grass) to solar
+!! radiation. the modified two-stream assumes vegetation covers fully the 
+!! gridcell but with gaps between tree crowns.                                                     
   subroutine energy (parameters,ice    ,vegtyp ,ist    ,nsnow  ,nsoil  , & !in
                      isnow  ,dt     ,rhoair ,sfcprs ,qair   , & !in
                      sfctmp ,thair  ,lwdn   ,uu     ,vv     ,zref   , & !in
@@ -1575,15 +1602,17 @@ endif   ! croptype == 0
                      elai   ,esai   ,fwet   ,foln   ,         & !in
                      fveg   ,pahv   ,pahg   ,pahb   ,                 & !in
                      qsnow  ,dzsnso ,lat    ,canliq ,canice ,iloc   , jloc, & !in
-		     z0wrf  ,                                         &
+                     thsfc_loc, prslkix,prsik1x,prslk1x,garea1,       & !in
+		     z0wrf  ,z0hwrf ,                                 & !out
                      imelt  ,snicev ,snliqv ,epore  ,t2m    ,fsno   , & !out
                      sav    ,sag    ,qmelt  ,fsa    ,fsr    ,taux   , & !out
                      tauy   ,fira   ,fsh    ,fcev   ,fgev   ,fctr   , & !out
                      trad   ,psn    ,apar   ,ssoil  ,btrani ,btran  , & !out
-                     ponding,ts     ,latheav , latheag , frozen_canopy,frozen_ground,                       & !out
+                     ponding,ts     ,latheav , latheag , frozen_canopy,frozen_ground,      & !out
                      tv     ,tg     ,stc    ,snowh  ,eah    ,tah    , & !inout
                      sneqvo ,sneqv  ,sh2o   ,smc    ,snice  ,snliq  , & !inout
                      albold ,cm     ,ch     ,dx     ,dz8w   ,q2     , &   !inout
+                     ustarx ,                                         &   !inout
 #ifdef CCPP
                      tauss  ,laisun ,laisha ,rb ,errmsg ,errflg,      & !inout
 #else
@@ -1647,6 +1676,13 @@ endif   ! croptype == 0
   real (kind=kind_phys)                              , intent(in)    :: rhoair !density air (kg/m3)
   real (kind=kind_phys)                              , intent(in)    :: eair   !vapor pressure air (pa)
   real (kind=kind_phys)                              , intent(in)    :: sfcprs !pressure (pa)
+
+  logical                                            , intent(in)    :: thsfc_loc
+  real (kind=kind_phys)                              , intent(in)    :: prslkix ! in exner function
+  real (kind=kind_phys)                              , intent(in)    :: prsik1x ! in exner function
+  real (kind=kind_phys)                              , intent(in)    :: prslk1x ! in exner function
+  real (kind=kind_phys)                              , intent(in)    :: garea1 
+
   real (kind=kind_phys)                              , intent(in)    :: qair   !specific humidity (kg/kg)
   real (kind=kind_phys)                              , intent(in)    :: sfctmp !air temperature (k)
   real (kind=kind_phys)                              , intent(in)    :: thair  !potential temperature (k)
@@ -1688,6 +1724,7 @@ endif   ! croptype == 0
 
 ! outputs
   real (kind=kind_phys)                              , intent(out)   :: z0wrf  !combined z0 sent to coupled model
+  real (kind=kind_phys)                              , intent(out)   :: z0hwrf !combined z0h sent to coupled model
   integer, dimension(-nsnow+1:nsoil), intent(out)   :: imelt  !phase change index [1-melt; 2-freeze]
   real (kind=kind_phys)   , dimension(-nsnow+1:    0), intent(out)   :: snicev !partial volume ice [m3/m3]
   real (kind=kind_phys)   , dimension(-nsnow+1:    0), intent(out)   :: snliqv !partial volume liq. water [m3/m3]
@@ -1716,6 +1753,7 @@ endif   ! croptype == 0
 !  real (kind=kind_phys)                              , intent(out)   :: lathea !latent heat vap./sublimation (j/kg)
   real (kind=kind_phys)                              , intent(out)   :: latheav !latent heat vap./sublimation (j/kg)
   real (kind=kind_phys)                              , intent(out)   :: latheag !latent heat vap./sublimation (j/kg)
+  real (kind=kind_phys)                              , intent(out)   :: ts     !surface temperature (k)
   logical                           , intent(out)   :: frozen_ground ! used to define latent heat pathway
   logical                           , intent(out)   :: frozen_canopy ! used to define latent heat pathway
 
@@ -1738,7 +1776,6 @@ endif   ! croptype == 0
 !jref:end
 
 ! input & output
-  real (kind=kind_phys)                              , intent(inout) :: ts     !surface temperature (k)
   real (kind=kind_phys)                              , intent(inout) :: tv     !vegetation temperature (k)
   real (kind=kind_phys)                              , intent(inout) :: tg     !ground temperature (k)
   real (kind=kind_phys)   , dimension(-nsnow+1:nsoil), intent(inout) :: stc    !snow/soil temperature [k]
@@ -1756,9 +1793,10 @@ endif   ! croptype == 0
   real (kind=kind_phys)                              , intent(inout) :: cm     !momentum drag coefficient
   real (kind=kind_phys)                              , intent(inout) :: ch     !sensible heat exchange coefficient
   real (kind=kind_phys)                              , intent(inout) :: q1
-  real                              , intent(inout) :: rb     !leaf boundary layer resistance (s/m)
-  real                              , intent(inout) :: laisun !sunlit leaf area index (m2/m2)
-  real                              , intent(inout) :: laisha !shaded leaf area index (m2/m2)
+  real (kind=kind_phys)                              , intent(inout) :: ustarx !< friction velocity
+  real (kind=kind_phys)                              , intent(inout) :: rb     !leaf boundary layer resistance (s/m)
+  real (kind=kind_phys)                              , intent(inout) :: laisun !sunlit leaf area index (m2/m2)
+  real (kind=kind_phys)                              , intent(inout) :: laisha !shaded leaf area index (m2/m2)
 #ifdef CCPP
   character(len=*)                  , intent(inout) :: errmsg
   integer                           , intent(inout) :: errflg
@@ -1848,6 +1886,24 @@ endif   ! croptype == 0
   real (kind=kind_phys),intent(out)                                  :: chv2    !sensible heat conductance, canopy air to zlvl air (m/s)
   real (kind=kind_phys),intent(out)                                  :: chb2    !sensible heat conductance, canopy air to zlvl air (m/s)
   real (kind=kind_phys)                                  :: noahmpres
+! for new coupling
+  real (kind=kind_phys)                                  :: csigmaf0
+  real (kind=kind_phys)                                  :: csigmaf1
+  real (kind=kind_phys)                                  :: csigmafveg
+
+  real (kind=kind_phys)                                  :: cdmnv
+  real (kind=kind_phys)                                  :: ezpdv
+  real (kind=kind_phys)                                  :: cdmng
+  real (kind=kind_phys)                                  :: ezpdg
+
+  real (kind=kind_phys)                                  :: ezpd
+  real (kind=kind_phys)                                  :: cdmn
+  real (kind=kind_phys)                                  :: gsigma
+
+  real (kind=kind_phys)                                  :: kbsigmafveg
+  real (kind=kind_phys)                                  :: aone
+  real (kind=kind_phys)                                  :: coeffa
+  real (kind=kind_phys)                                  :: coeffb
 
 !jref:end  
 
@@ -1878,6 +1934,29 @@ endif   ! croptype == 0
     chv2      = 0.
     rb        = 0.
 
+!
+    cdmnv     = 0.
+    ezpdv     = 0.
+
+    cdmng     = 0.
+    ezpdg     = 0.
+
+    cdmn      = 0.
+    ezpd      = 0.
+
+    gsigma    = 0.
+
+    z0hwrf    = 0.
+    csigmaf1  = 0.
+    csigmaf0  = 0.
+    csigmafveg= 0.
+    kbsigmafveg = 0.
+    aone      = 0.
+    coeffa    = 0.
+    coeffb    = 0.
+
+!
+
 ! wind speed at reference height: ur >= 1
 
     ur = max( sqrt(uu**2.+vv**2.), 1. )
@@ -1891,6 +1970,10 @@ endif   ! croptype == 0
 ! ground snow cover fraction [niu and yang, 2007, jgr]
 
      fsno = 0.
+     if(snowh <= 1.e-6 .or. sneqv <= 1.e-3) then
+       snowh = 0.0
+       sneqv = 0.0
+     end if
      if(snowh.gt.0.)  then
          bdsno    = sneqv / snowh
          fmelt    = (bdsno/100.)**parameters%mfsno
@@ -2074,7 +2157,8 @@ endif   ! croptype == 0
                     rsurf   ,latheav ,latheag ,parsun  ,parsha  ,igs     , & !in
                     foln    ,co2air  ,o2air   ,btran   ,sfcprs  , & !in
                     rhsur   ,iloc    ,jloc    ,q2      ,pahv  ,pahg  , & !in
-                    eah     ,tah     ,tv      ,tgv     ,cmv     , & !inout
+                    thsfc_loc, prslkix,prsik1x,prslk1x, garea1,        & !in
+                    eah     ,tah     ,tv      ,tgv     ,cmv, ustarx , & !inout
 #ifdef CCPP
                     chv     ,dx      ,dz8w    ,errmsg  ,errflg  , & !inout
 #else
@@ -2082,10 +2166,15 @@ endif   ! croptype == 0
 #endif
                     tauxv   ,tauyv   ,irg     ,irc     ,shg     , & !out
                     shc     ,evg     ,evc     ,tr      ,ghv     , & !out
-                    t2mv    ,psnsun  ,psnsha  ,                   & !out
+                    t2mv    ,psnsun  ,psnsha  ,csigmaf1,          & !out
 !jref:start
                     qc      ,qsfc    ,psfc    , & !in
                     q2v     ,chv2, chleaf, chuc)               !inout 
+
+                    cdmnv = 0.4*0.4/log((zlvl-zpd)/z0m)**2
+                    aone = 2.6*(10.0*parameters%hvt/(zlvl-zpd))**0.355
+                    ezpdv =  zpd*fveg                            !for the grid
+
 !jref:end
 #ifdef CCPP
         if (errflg /= 0) return 
@@ -2098,19 +2187,34 @@ endif   ! croptype == 0
     call bare_flux (parameters,nsnow   ,nsoil   ,isnow   ,dt      ,sag     , & !in
                     lwdn    ,ur      ,uu      ,vv      ,sfctmp  , & !in
                     thair   ,qair    ,eair    ,rhoair  ,snowh   , & !in
-                    dzsnso  ,zlvl    ,zpdg    ,z0mg    ,fsno,          & !in
+                    dzsnso  ,zlvl    ,zpdg    ,z0mg    ,fsno, & !in
                     emg     ,stc     ,df      ,rsurf   ,latheag  , & !in
                     gammag   ,rhsur   ,iloc    ,jloc    ,q2      ,pahb  , & !in
+                    thsfc_loc, prslkix,prsik1x,prslk1x,fveg,garea1,       & !in
 #ifdef CCPP
-                    tgb     ,cmb     ,chb     ,errmsg  ,errflg   , & !inout
+                    tgb     ,cmb     ,chb, ustarx,errmsg  ,errflg   , & !inout
 #else
-                    tgb     ,cmb     ,chb     ,                   & !inout
+                    tgb     ,cmb     ,chb, ustarx,                   & !inout
 #endif
-                    tauxb   ,tauyb   ,irb     ,shb     ,evb     , & !out
+                    tauxb   ,tauyb   ,irb     ,shb     ,evb,csigmaf0,& !out
                     ghb     ,t2mb    ,dx      ,dz8w    ,vegtyp  , & !out
 !jref:start
                     qc      ,qsfc    ,psfc    , & !in
                     sfcprs  ,q2b,   chb2)                          !in 
+
+                    cdmng = 0.4*0.4/log((zlvl-zpdg)/z0mg)**2
+                    ezpdg  = zpdg
+!
+! vegetation is optional; use the larger one
+!
+               if (ezpdv .ge. ezpdg ) then
+                  ezpd  = ezpdv
+               elseif (ezpdv .gt. 0.0 .and. ezpdv .lt. ezpdg) then
+                  ezpd = (1.0 -fveg)*ezpdg
+               else
+                  ezpd = ezpdg
+               endif
+
 !jref:end
 #ifdef CCPP
     if (errflg /= 0) return
@@ -2131,12 +2235,31 @@ endif   ! croptype == 0
 	pah   = fveg * pahg      + (1.0 - fveg) * pahb   + pahv
         tg    = fveg * tgv       + (1.0 - fveg) * tgb
         t2m   = fveg * t2mv      + (1.0 - fveg) * t2mb
-        ts    = fveg * tv        + (1.0 - fveg) * tgb
+        ts    = fveg * tah       + (1.0 - fveg) * tgb
         cm    = fveg * cmv       + (1.0 - fveg) * cmb      ! better way to average?
         ch    = fveg * chv       + (1.0 - fveg) * chb
         q1    = fveg * (eah*0.622/(sfcprs - 0.378*eah)) + (1.0 - fveg)*qsfc
         q2e   = fveg * q2v       + (1.0 - fveg) * q2b
-	z0wrf = z0m
+
+        coeffa     = (csigmaf0 - csigmaf1)/(1.0 - exp(-1.0*aone))
+        coeffb     = csigmaf0 - coeffa
+        csigmafveg = coeffa * exp(-1.0*aone*fveg) + coeffb
+
+        gsigma = fveg**0.5 + fveg*(1.0-fveg)*1.0
+
+!
+! 0.5 ~ 1.0 for the 0.5 place; 0 ~ 1.0 for the 1.0 place, adjustable empirical
+! canopy roughness geometry parameter; currently fveg = 0.78 has the largest
+! momentum flux; can test the fveg-based average by setting 0.5 to 1.0 and 1.0
+! to 0.0 ! see Blumel; JAM,1998
+!
+
+        cdmn   = gsigma*cdmnv + (1.0-gsigma)*cdmng
+        z0wrf = (zlvl - ezpd)*exp(-0.4/sqrt(cdmn))
+
+        kbsigmafveg = csigmafveg/log((zlvl-ezpd)/z0wrf) - log((zlvl-ezpd)/z0wrf)
+        z0hwrf = z0wrf/exp(kbsigmafveg)
+
     else
         taux  = tauxb
         tauy  = tauyb
@@ -2159,6 +2282,9 @@ endif   ! croptype == 0
         tgv   = tgb
         chv   = chb
 	z0wrf = z0mg
+
+        z0hwrf =z0wrf/exp( csigmaf0/log((zlvl-ezpd)/z0wrf) - log((zlvl-ezpd)/z0wrf) )
+
     end if
 
     fire = lwdn + fira
@@ -2357,6 +2483,7 @@ endif   ! croptype == 0
 !== begin csnow ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! snow bulk density,volumetric capacity, and thermal conductivity
   subroutine csnow (parameters,isnow   ,nsnow   ,nsoil   ,snice   ,snliq   ,dzsnso  , & !in
                     tksno   ,cvsno   ,snicev  ,snliqv  ,epore   )   !out
 ! --------------------------------------------------------------------------------------------------
@@ -2417,6 +2544,8 @@ endif   ! croptype == 0
 !== begin tdfcnd ===================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate thermal diffusivity and conductivity of the soil. peters-lidard
+!! approach (peters-lidard et al., 1998)
   subroutine tdfcnd (parameters, isoil, df, smc, sh2o)
 ! --------------------------------------------------------------------------------------------------
 ! calculate thermal diffusivity and conductivity of the soil.
@@ -2656,6 +2785,9 @@ endif   ! croptype == 0
 !== begin albedo ===================================================================================
 
 !>\ingroup NoahMP_LSM
+!! surface albedos. also fluxes (per unit incoming direct and diffuse radiation)
+!! reflected, transmitted, and absorbed by vegetation. also sunlight fraction
+!! of the canopy.
   subroutine albedo (parameters,vegtyp ,ist    ,ice    ,nsoil  , & !in
                      dt     ,cosz   ,fage   ,elai   ,esai   , & !in
                      tg     ,tv     ,snowh  ,fsno   ,fwet   , & !in
@@ -3199,6 +3331,11 @@ endif   ! croptype == 0
 !== begin twostream ================================================================================
 
 !>\ingroup NoahMP_LSM
+!! use two-stream approximation of Dickinson (1983) adv geophysics
+!! 25: 305-353 and sellers (1985) int j remote sensing 6: 1335-1372
+!! to calculate fluxes absorbed by vegetation, reflected by vegetation,
+!! and transmitted through vegetation for unit incoming direct or diffuse
+!! flux given an underlying surface with known albedo.
   subroutine twostream (parameters,ib     ,ic      ,vegtyp  ,cosz    ,vai    , & !in
                         fwet   ,t       ,albgrd  ,albgri  ,rho    , & !in
                         tau    ,fveg    ,ist     ,iloc    ,jloc   , & !in
@@ -3449,18 +3586,21 @@ endif   ! croptype == 0
 !== begin vege_flux ================================================================================
 
 !>\ingroup NoahMP_LSM
+!! use newton-raphson iteration to solve for vegetation (tv) and
+!! ground (tg) temperatures that balance the surface energy budgets.
   subroutine vege_flux(parameters,nsnow   ,nsoil   ,isnow   ,vegtyp  ,veg     , & !in
                        dt      ,sav     ,sag     ,lwdn    ,ur      , & !in
                        uu      ,vv      ,sfctmp  ,thair   ,qair    , & !in
                        eair    ,rhoair  ,snowh   ,vai     ,gammav   ,gammag,  & !in
                        fwet    ,laisun  ,laisha  ,cwp     ,dzsnso  , & !in
-                       zlvl    ,zpd     ,z0m     ,fveg    , & !in
+                       zlvl    ,zpd     ,z0m     ,fveg,     & !in
                        z0mg    ,emv     ,emg     ,canliq  ,fsno,          & !in
                        canice  ,stc     ,df      ,rssun   ,rssha   , & !in
                        rsurf   ,latheav ,latheag  ,parsun  ,parsha  ,igs     , & !in
                        foln    ,co2air  ,o2air   ,btran   ,sfcprs  , & !in
                        rhsur   ,iloc    ,jloc    ,q2      ,pahv    ,pahg     , & !in
-                       eah     ,tah     ,tv      ,tg      ,cm      , & !inout
+                       thsfc_loc, prslkix,prsik1x,prslk1x, garea1,      & !in
+                       eah     ,tah     ,tv      ,tg      ,cm,ustarx,& !inout
 #ifdef CCPP
                        ch      ,dx      ,dz8w    ,errmsg  ,errflg  , & !inout
 #else
@@ -3468,7 +3608,7 @@ endif   ! croptype == 0
 #endif
                        tauxv   ,tauyv   ,irg     ,irc     ,shg     , & !out
                        shc     ,evg     ,evc     ,tr      ,gh      , & !out
-                       t2mv    ,psnsun  ,psnsha  ,                   & !out
+                       t2mv    ,psnsun  ,psnsha  ,csigmaf1,          & !out
                        qc      ,qsfc    ,psfc    ,                   & !in
                        q2v     ,cah2    ,chleaf  ,chuc    )            !inout 
 
@@ -3505,6 +3645,12 @@ endif   ! croptype == 0
   real (kind=kind_phys),                            intent(in) :: rhoair !density air (kg/m**3)
   real (kind=kind_phys),                            intent(in) :: dt     !time step (s)
   real (kind=kind_phys),                            intent(in) :: fsno     !snow fraction
+
+  logical                                         , intent(in) :: thsfc_loc
+  real (kind=kind_phys)                           , intent(in) :: prslkix ! in exner function
+  real (kind=kind_phys)                           , intent(in) :: prsik1x ! in exner function
+  real (kind=kind_phys)                           , intent(in) :: prslk1x ! in exner function
+  real (kind=kind_phys)                           , intent(in) :: garea1  ! 
 
   real (kind=kind_phys),                            intent(in) :: snowh  !actual snow depth [m]
   real (kind=kind_phys),                            intent(in) :: fwet   !wetted fraction of canopy
@@ -3558,6 +3704,7 @@ endif   ! croptype == 0
   real (kind=kind_phys),                         intent(inout) :: tg     !ground temperature (k)
   real (kind=kind_phys),                         intent(inout) :: cm     !momentum drag coefficient
   real (kind=kind_phys),                         intent(inout) :: ch     !sensible heat exchange coefficient
+  real (kind=kind_phys),                         intent(inout) :: ustarx !< friction velocity
 
 #ifdef CCPP
   character(len=*),             intent(inout) :: errmsg
@@ -3579,6 +3726,7 @@ endif   ! croptype == 0
   real (kind=kind_phys),                           intent(out) :: t2mv   !2 m height air temperature (k)
   real (kind=kind_phys),                           intent(out) :: psnsun !sunlit leaf photosynthesis (umolco2/m2/s)
   real (kind=kind_phys),                           intent(out) :: psnsha !shaded leaf photosynthesis (umolco2/m2/s)
+  real (kind=kind_phys),                           intent(out) :: csigmaf1
   real (kind=kind_phys),                           intent(out) :: chleaf !leaf exchange coefficient
   real (kind=kind_phys),                           intent(out) :: chuc   !under canopy exchange coefficient
 
@@ -3651,6 +3799,22 @@ endif   ! croptype == 0
   real (kind=kind_phys) :: ch2          !surface exchange at 2m
   real (kind=kind_phys) :: thstar          !surface exchange at 2m
 
+  real (kind=kind_phys) :: dlf          ! leaf dimension
+  real(kind=kind_phys)  :: sigmaa       !  momentum partition parameter
+  real(kind=kind_phys)  :: kbsigmaf1    !  kb^-1 for fully convered by vegetation
+  real(kind=kind_phys)  :: kbsigmafc    !  kb^-1 under canopy ground
+
+  real (kind=kind_phys) :: fm10         !monin-obukhov momentum adjustment at 10m
+  real (kind=kind_phys) :: rb1v         !Bulk Richardson # over vegetation
+  real (kind=kind_phys) :: stress1v     !Stress over vegetation
+  real (kind=kind_phys) :: snwd
+  real (kind=kind_phys) :: virtfacv
+  real (kind=kind_phys) :: thv1v
+  real (kind=kind_phys) :: tvsv
+  real (kind=kind_phys) :: tv1v
+  real (kind=kind_phys) :: zlvlv
+
+
   real (kind=kind_phys) :: thvair
   real (kind=kind_phys) :: thah 
   real (kind=kind_phys) :: rahc2        !aerodynamic resistance for sensible heat (s/m)
@@ -3667,6 +3831,9 @@ endif   ! croptype == 0
   real (kind=kind_phys) :: laisune      !sunlit leaf area index, one-sided (m2/m2),effective
   real (kind=kind_phys) :: laishae      !shaded leaf area index, one-sided (m2/m2),effective
 
+  real(kind=kind_phys) ::  tem1,tem2,zvfun1,gdx
+  real(kind=kind_phys), parameter :: z0lo=0.1, z0up=1.0
+
   integer :: k         !index
   integer :: iter      !iteration index
 
@@ -3679,6 +3846,8 @@ endif   ! croptype == 0
 
   integer :: liter     !last iteration
 
+  integer :: niter     !for sfcdiff3
+
 
   real (kind=kind_phys) :: t, tdc       !kelvin to degree celsius with limit -50 to +50
 
@@ -3689,7 +3858,11 @@ endif   ! croptype == 0
 
         mpe = 1e-6
         liter = 0
-        fv = 0.1
+
+        fv = ustarx
+
+        niter = 1
+        if (ur < 2.0) niter = 2
 
 ! ---------------------------------------------------------------------------------------------
 ! initialization variables that do not depend on stability iteration
@@ -3704,11 +3877,29 @@ endif   ! croptype == 0
         h      = 0.
         qfx    = 0.
 
+        csigmaf1 = 0.
+
 ! limit lai
 
         vaie    = min(6.,vai   )
         laisune = min(6.,laisun)
         laishae = min(6.,laisha)
+
+! for sfcdiff3
+
+        snwd      = snowh*1000.0
+        zlvlv     = zlvl - zpd
+
+        virtfacv  = 1.0 +  0.61 * max(qair, 1.e-8)
+        tv1v      = sfctmp * virtfacv
+
+        if(thsfc_loc) then ! Use local potential temperature
+            thv1v  = sfctmp * prslkix * virtfacv
+        else ! Use potential temperature reference to 1000 hPa
+            thv1v    = sfctmp / prslk1x * virtfacv
+        endif
+!
+
 
 ! saturation vapor pressure at ground temperature
 
@@ -3723,6 +3914,8 @@ endif   ! croptype == 0
 !jref - consistent surface specific humidity for sfcdif3 and sfcdif4
 
         qsfc = 0.622*eair/(psfc-0.378*eair)  
+
+        dlf   =  parameters%dleaf                         !leaf dimension
 
 ! canopy height
 
@@ -3771,13 +3964,27 @@ endif   ! croptype == 0
         air = -emv*(1.+(1.-emv)*(1.-emg))*lwdn - emv*emg*sb*tg**4  
         cir = (2.-emv*(1.-emg))*emv*sb
 ! ---------------------------------------------------------------------------------------------
+
+         sigmaa    = 1.0 - (0.5/(0.5+vaie))*exp(-vaie**2/8.0)
+         kbsigmaf1 = 16.4*(sigmaa*vaie**3)**(-0.25)*sqrt(dlf*ur/log((zlvl-zpd)/z0m))
+         z0h       = z0m/exp(kbsigmaf1)
+         csigmaf1  = log((zlvl-zpd)/z0m)*(log((zlvl-zpd)/z0m)+kbsigmaf1) ! for output for interpolation
+
+! --
+            tem1 = (z0m - z0lo) / (z0up - z0lo)
+            tem1 = min(max(tem1, 0.0_kind_phys), 1.0_kind_phys)
+            tem2 = max(fveg, 0.1_kind_phys)
+            zvfun1= sqrt(tem1 * tem2)
+            gdx=sqrt(garea1)
+      if(opt_sfc == 1 .or. opt_sfc == 2) then
+
       loop1: do iter = 1, niterc    !  begin stability iteration
 
+! use newly derived z0m/z0h
+
        if(iter == 1) then
-            z0h  = z0m  
             z0hg = z0mg
        else
-            z0h  = z0m    !* exp(-czil*0.4*258.2*sqrt(fv*z0m))
             z0hg = z0mg   !* exp(-czil*0.4*258.2*sqrt(fv*z0mg))
        end if
 
@@ -3924,6 +4131,135 @@ endif   ! croptype == 0
 
      end do loop1 ! end stability iteration
 
+    endif         !opt_sfc 1 or 2
+!
+!   sfcdiff3
+!
+         if (opt_sfc == 3) then
+
+            z0hg = z0mg
+
+           do iter = 1, niter                                   !1 or 2; depending on ur
+
+            if(thsfc_loc) then ! Use local potential temperature
+              tvsv   = tah * virtfacv
+            else ! Use potential temperature referenced to 1000 hPa
+              tvsv   = tah/prsik1x * virtfacv
+            endif
+
+          call       stability                                                &
+        (zlvlv, zvfun1, gdx,tv1v,thv1v, ur, z0m, z0h, tvsv, grav,thsfc_loc,   &
+         rb1v, fm,fh,fm10,fh2,cm,ch,stress1v,fv)
+
+       ramc = max(1.,1./(cm*ur))
+       rahc = max(1.,1./(ch*ur))
+       rawc = rahc
+
+! aerodyn resistance between heights z0g and d+z0v, rag, and leaf
+! boundary layer resistance, rb
+       
+       call ragrb(parameters,iter   ,vaie   ,rhoair ,hg     ,tah    , & !in
+                  zpd    ,z0mg   ,z0hg   ,hcan   ,uc     , & !in
+                  z0h    ,fv     ,cwp    ,vegtyp ,mpe    , & !in
+                  tv     ,mozg   ,fhg    ,iloc   ,jloc   , & !inout
+                  ramg   ,rahg   ,rawg   ,rb     )           !out
+
+! es and d(es)/dt evaluated at tv
+
+       t = tdc(tv)
+       call esat(t, esatw, esati, dsatw, dsati)
+       if (t .gt. 0.) then
+          estv  = esatw
+          destv = dsatw
+       else
+          estv  = esati
+          destv = dsati
+       end if
+
+! stomatal resistance
+        
+     if(iter == 1) then
+        if (opt_crs == 1) then  ! ball-berry
+         call stomata (parameters,vegtyp,mpe   ,parsun ,foln  ,iloc  , jloc , & !in       
+                       tv    ,estv  ,eah    ,sfctmp,sfcprs, & !in
+                       o2air ,co2air,igs    ,btran ,rb    , & !in
+                       rssun ,psnsun)                         !out
+
+         call stomata (parameters,vegtyp,mpe   ,parsha ,foln  ,iloc  , jloc , & !in
+                       tv    ,estv  ,eah    ,sfctmp,sfcprs, & !in
+                       o2air ,co2air,igs    ,btran ,rb    , & !in
+                       rssha ,psnsha)                         !out
+        end if
+
+        if (opt_crs == 2) then  ! jarvis
+         call  canres (parameters,parsun,tv    ,btran ,eah    ,sfcprs, & !in
+                       rssun ,psnsun,iloc  ,jloc   )          !out
+
+         call  canres (parameters,parsha,tv    ,btran ,eah    ,sfcprs, & !in
+                       rssha ,psnsha,iloc  ,jloc   )          !out
+        end if
+     end if
+
+! prepare for sensible heat flux above veg.
+
+        cah  = 1./rahc
+        cvh  = 2.*vaie/rb
+        cgh  = 1./rahg
+        cond = cah + cvh + cgh
+        ata  = (sfctmp*cah + tg*cgh) / cond
+        bta  = cvh/cond
+        csh  = (1.-bta)*rhoair*cpair*cvh
+
+! prepare for latent heat flux above veg.
+
+        caw  = 1./rawc
+        cew  = fwet*vaie/rb
+        ctw  = (1.-fwet)*(laisune/(rb+rssun) + laishae/(rb+rssha))
+        cgw  = 1./(rawg+rsurf)
+        cond = caw + cew + ctw + cgw
+        aea  = (eair*caw + estg*cgw) / cond
+        bea  = (cew+ctw)/cond
+        cev  = (1.-bea)*cew*rhoair*cpair/gammav   ! barlage: change to vegetation v3.6
+        ctr  = (1.-bea)*ctw*rhoair*cpair/gammav
+
+! evaluate surface fluxes with current temperature and solve for dts
+
+        tah = ata + bta*tv               ! canopy air t.
+        eah = aea + bea*estv             ! canopy air e
+
+        irc = fveg*(air + cir*tv**4)
+        shc = fveg*rhoair*cpair*cvh * (  tv-tah)
+        evc = fveg*rhoair*cpair*cew * (estv-eah) / gammav ! barlage: change to v in v3.6
+        tr  = fveg*rhoair*cpair*ctw * (estv-eah) / gammav
+	if (tv > tfrz) then
+          evc = min(canliq*latheav/dt,evc)    ! barlage: add if block for canice in v3.6
+	else
+          evc = min(canice*latheav/dt,evc)
+	end if
+
+        b   = sav-irc-shc-evc-tr+pahv                          !additional w/m2
+        a   = fveg*(4.*cir*tv**3 + csh + (cev+ctr)*destv) !volumetric heat capacity
+        dtv = b/a
+
+        irc = irc + fveg*4.*cir*tv**3*dtv
+        shc = shc + fveg*csh*dtv
+        evc = evc + fveg*cev*destv*dtv
+        tr  = tr  + fveg*ctr*destv*dtv                               
+
+! update vegetation surface temperature
+        tv  = tv + dtv
+!        tah = ata + bta*tv               ! canopy air t; update here for consistency
+
+! for computing m-o length in the next iteration
+        h  = rhoair*cpair*(tah - sfctmp) /rahc        
+        hg = rhoair*cpair*(tg  - tah)   /rahg
+
+! consistent specific humidity from canopy air vapor pressure
+        qsfc = (0.622*eah)/(sfcprs-0.378*eah)
+
+     enddo      ! iteration
+    endif       ! sfcdiff3
+
 ! under-canopy fluxes and tg
 
         air = - emg*(1.-emv)*lwdn - emg*emv*sb*tv**4
@@ -3989,7 +4325,7 @@ endif   ! croptype == 0
 !     qfx = (qsfc-qair)*rhoair*caw !*cpair/gammag
 
 ! 2m temperature over vegetation ( corrected for low cq2v values )
-   if (opt_sfc == 1 .or. opt_sfc == 2) then
+   if (opt_sfc == 1 .or. opt_sfc == 2 .or. opt_sfc ==3 ) then
 !      cah2 = fv*1./vkc*log((2.+z0h)/z0h)
       cah2 = fv*vkc/log((2.+z0h)/z0h)
       cah2 = fv*vkc/(log((2.+z0h)/z0h)-fh2)
@@ -4015,18 +4351,21 @@ endif   ! croptype == 0
 !== begin bare_flux ================================================================================
 
 !>\ingroup NoahMP_LSM
+!! use newton-raphson iteration to solve ground (tg) temperature
+!! that balances the surface energy budgets for bare soil fraction.
   subroutine bare_flux (parameters,nsnow   ,nsoil   ,isnow   ,dt      ,sag     , & !in
                         lwdn    ,ur      ,uu      ,vv      ,sfctmp  , & !in
                         thair   ,qair    ,eair    ,rhoair  ,snowh   , & !in
                         dzsnso  ,zlvl    ,zpd     ,z0m     ,fsno    , & !in
                         emg     ,stc     ,df      ,rsurf   ,lathea  , & !in
                         gamma   ,rhsur   ,iloc    ,jloc    ,q2      ,pahb  , & !in
+                        thsfc_loc, prslkix,prsik1x,prslk1x,fveg,garea1,      & !in
 #ifdef CCPP
-                        tgb     ,cm      ,ch      ,errmsg  ,errflg  , & !inout
+                        tgb     ,cm      ,ch,ustarx,errmsg  ,errflg  , & !inout
 #else
-                        tgb     ,cm      ,ch      ,          & !inout
+                        tgb     ,cm      ,ch,ustarx,          & !inout
 #endif
-                        tauxb   ,tauyb   ,irb     ,shb     ,evb     , & !out
+                        tauxb   ,tauyb   ,irb     ,shb     ,evb,csigmaf0,& !out
                         ghb     ,t2mb    ,dx      ,dz8w    ,ivgtyp  , & !out
                         qc      ,qsfc    ,psfc    ,                   & !in
                         sfcprs  ,q2b     ,ehb2    )                     !in 
@@ -4072,6 +4411,13 @@ endif   ! croptype == 0
   real (kind=kind_phys),                            intent(in) :: rhsur  !raltive humidity in surface soil/snow air space (-)
   real (kind=kind_phys),                            intent(in) :: fsno     !snow fraction
 
+  logical                                         , intent(in) :: thsfc_loc
+  real (kind=kind_phys)                           , intent(in) :: prslkix ! in exner function
+  real (kind=kind_phys)                           , intent(in) :: prsik1x ! in exner function
+  real (kind=kind_phys)                           , intent(in) :: prslk1x ! in exner function
+  real (kind=kind_phys)                           , intent(in) :: fveg 
+  real (kind=kind_phys)                           , intent(in) :: garea1 
+
 !jref:start; in 
   integer                        , intent(in) :: ivgtyp
   real (kind=kind_phys)                           , intent(in) :: qc     !cloud water mixing ratio
@@ -4088,6 +4434,7 @@ endif   ! croptype == 0
   real (kind=kind_phys),                         intent(inout) :: tgb    !ground temperature (k)
   real (kind=kind_phys),                         intent(inout) :: cm     !momentum drag coefficient
   real (kind=kind_phys),                         intent(inout) :: ch     !sensible heat exchange coefficient
+  real (kind=kind_phys),                         intent(inout) :: ustarx !friction velocity
 #ifdef CCPP
   character(len=*),             intent(inout) :: errmsg
   integer,                      intent(inout) :: errflg
@@ -4103,6 +4450,7 @@ endif   ! croptype == 0
   real (kind=kind_phys),                           intent(out) :: evb    !latent heat flux (w/m2)   [+ to atm]
   real (kind=kind_phys),                           intent(out) :: ghb    !ground heat flux (w/m2)  [+ to soil]
   real (kind=kind_phys),                           intent(out) :: t2mb   !2 m height air temperature (k)
+  real (kind=kind_phys),                           intent(out) :: csigmaf0  !
 !jref:start
   real (kind=kind_phys),                           intent(out) :: q2b    !bare ground heat conductance
   real (kind=kind_phys) :: ehb    !bare ground heat conductance
@@ -4112,6 +4460,17 @@ endif   ! croptype == 0
 !jref:end
 
 ! local variables 
+
+  real (kind=kind_phys) :: rb1b         !Bulk Richardson # over bare soil
+  real (kind=kind_phys) :: stress1b     !Stress over bare soil
+  real (kind=kind_phys) :: snwd
+  real (kind=kind_phys) :: virtfacb
+  real (kind=kind_phys) :: thv1b
+  real (kind=kind_phys) :: tvsb
+  real (kind=kind_phys) :: tv1b
+  real (kind=kind_phys) :: zlvlb
+
+  real (kind=kind_phys) :: fm10
 
   real (kind=kind_phys) :: taux       !wind stress: e-w (n/m2)
   real (kind=kind_phys) :: tauy       !wind stress: n-s (n/m2)
@@ -4138,6 +4497,9 @@ endif   ! croptype == 0
   real (kind=kind_phys) :: csh        !coefficients for sh as function of ts
   real (kind=kind_phys) :: cev        !coefficients for ev as function of esat[ts]
   real (kind=kind_phys) :: cgh        !coefficients for st as function of ts
+
+  real(kind=kind_phys)  :: kbsigmaf0
+  real(kind=kind_phys)  :: reynb
 
 !jref:start
   real (kind=kind_phys) :: rahb2      !aerodynamic resistance for sensible heat 2m (s/m)
@@ -4173,8 +4535,13 @@ endif   ! croptype == 0
   real (kind=kind_phys) :: fh2          !monin-obukhov heat adjustment at 2m
   real (kind=kind_phys) :: ch2          !surface exchange at 2m
 
+  real(kind=kind_phys) ::  tem1,tem2,zvfun1,gdx
+  real(kind=kind_phys), parameter :: z0lo=0.1, z0up=1.0
+
   integer :: iter    !iteration index
   integer :: niterb  !number of iterations for surface temperature
+  integer :: niter
+
   real (kind=kind_phys)    :: mpe     !prevents overflow error if division by zero
 !jref:start
 !  data niterb /3/
@@ -4194,19 +4561,62 @@ endif   ! croptype == 0
         fh2    = 0.
         h      = 0.
         qfx    = 0.
-        fv     = 0.1
+
+        csigmaf0  = 0.
+        kbsigmaf0 = 0.
+
+        niter = 1
+        if (ur < 2.0) niter = 2
+
+        fv        = ustarx
+
+!       fv        = ur*vkc/log((zlvl-zpd)/z0m)
+
+        reynb = fv*z0m/(1.5e-05)
+
+        if (reynb .gt. 2.0) then
+           kbsigmaf0 = 2.46*reynb**0.25 - log(7.4)
+        else
+           kbsigmaf0 = - log(0.397)
+        endif
+
+        csigmaf0 = log((zlvl-zpd)/z0m)*(log((zlvl-zpd)/z0m) + kbsigmaf0)
+
+        z0h = max(z0m/exp(kbsigmaf0),1.0e-6)
+!
+! for sfcdiff3; maybe should move to inside the option
+!
+        snwd     = snowh*1000.0
+        zlvlb    = zlvl - zpd
+
+        virtfacb = 1.0 +  0.61 * max(qair, 1.e-8)
+        tv1b     = sfctmp * virtfacb
+
+        if(thsfc_loc) then ! Use local potential temperature
+            thv1b  = sfctmp * prslkix * virtfacb
+         else ! Use potential temperature reference to 1000 hPa
+            thv1b    = sfctmp / prslk1x * virtfacb
+        endif
 
         cir = emg*sb
         cgh = 2.*df(isnow+1)/dzsnso(isnow+1)
 
 ! -----------------------------------------------------------------
+            tem1 = (z0m - z0lo) / (z0up - z0lo)
+            tem1 = min(max(tem1, 0.0_kind_phys), 1.0_kind_phys)
+            tem2 = max(fveg, 0.1_kind_phys)
+            zvfun1= sqrt(tem1 * tem2)
+            gdx=sqrt(garea1)
+
+      if (opt_sfc == 1 .or. opt_sfc == 2) then
+
       loop3: do iter = 1, niterb  ! begin stability iteration
 
-        if(iter == 1) then
-            z0h = z0m 
-        else
-            z0h = z0m !* exp(-czil*0.4*258.2*sqrt(fv*z0m))
-        end if
+!       if(iter == 1) then
+!           z0h = z0m 
+!       else
+!           z0h = z0m !* exp(-czil*0.4*258.2*sqrt(fv*z0m))
+!       end if
 
         if(opt_sfc == 1) then
           call sfcdif1(parameters,iter   ,sfctmp ,rhoair ,h      ,qair   , & !in
@@ -4296,7 +4706,82 @@ endif   ! croptype == 0
         qfx = (qsfc-qair)*cev*gamma/cpair
 
      end do loop3 ! end stability iteration
+    endif         ! opt_sfc 1/2
 ! -----------------------------------------------------------------
+
+        if (opt_sfc == 3) then
+
+         do iter = 1, niter                                   !1 or 2; depending on ur
+
+            if(thsfc_loc) then ! Use local potential temperature
+              tvsb   = tgb * virtfacb
+            else ! Use potential temperature referenced to 1000 hPa
+              tvsb   = tgb/prsik1x * virtfacb
+            endif
+
+          call       stability                                               &
+        (zlvlb, zvfun1, gdx,tv1b,thv1b, ur, z0m, z0h, tvsb, grav,thsfc_loc,  &
+         rb1b, fm,fh,fm10,fh2,cm,ch,stress1b,fv)
+
+
+        ramb = max(1.,1./(cm*ur))
+        rahb = max(1.,1./(ch*ur))
+        rawb = rahb
+
+!jref - variables for diagnostics         
+        emb = 1./ramb
+        ehb = 1./rahb
+
+! es and d(es)/dt evaluated at tg
+
+        t = tdc(tgb)
+        call esat(t, esatw, esati, dsatw, dsati)
+        if (t .gt. 0.) then
+            estg  = esatw
+            destg = dsatw
+        else
+            estg  = esati
+            destg = dsati
+        end if
+
+        csh = rhoair*cpair/rahb
+        cev = rhoair*cpair/gamma/(rsurf+rawb)
+
+! surface fluxes and dtg
+
+        irb   = cir * tgb**4 - emg*lwdn
+        shb   = csh * (tgb        - sfctmp      )
+        evb   = cev * (estg*rhsur - eair        )
+        ghb   = cgh * (tgb        - stc(isnow+1))
+
+        b     = sag-irb-shb-evb-ghb+pahb
+        a     = 4.*cir*tgb**3 + csh + cev*destg + cgh
+        dtg   = b/a
+
+        irb = irb + 4.*cir*tgb**3*dtg
+        shb = shb + csh*dtg
+        evb = evb + cev*destg*dtg
+        ghb = ghb + cgh*dtg
+
+! update ground surface temperature
+        tgb = tgb + dtg
+
+! for m-o length
+!       h = csh * (tgb - sfctmp)
+
+        t = tdc(tgb)
+        call esat(t, esatw, esati, dsatw, dsati)
+        if (t .gt. 0.) then
+            estg  = esatw
+        else
+            estg  = esati
+        end if
+        qsfc = 0.622*(estg*rhsur)/(psfc-0.378*(estg*rhsur))
+
+        qfx = (qsfc-qair)*cev*gamma/cpair
+
+     end do ! end stability iteration
+    endif   ! sfcdiff3
 
 ! if snow on ground and tg > tfrz: reset tg = tfrz. reevaluate ground fluxes.
 
@@ -4318,7 +4803,7 @@ endif   ! croptype == 0
 
 !jref:start; errors in original equation corrected.
 ! 2m air temperature
-     if(opt_sfc == 1 .or. opt_sfc ==2) then
+     if(opt_sfc == 1 .or. opt_sfc ==2 .or. opt_sfc == 3) then
        ehb2  = fv*vkc/log((2.+z0h)/z0h)
        ehb2  = fv*vkc/(log((2.+z0h)/z0h)-fh2)
        cq2b  = ehb2
@@ -4340,6 +4825,8 @@ endif   ! croptype == 0
 !== begin ragrb ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! compute under-canopy aerodynamic resistance rag and leaf boundary layer
+!! resistance rb.
   subroutine ragrb(parameters,iter   ,vai    ,rhoair ,hg     ,tah    , & !in
                    zpd    ,z0mg   ,z0hg   ,hcan   ,uc     , & !in
                    z0h    ,fv     ,cwp    ,vegtyp ,mpe    , & !in
@@ -4442,6 +4929,7 @@ endif   ! croptype == 0
 !== begin sfcdif1 ==================================================================================
 
 !>\ingroup NoahMP_LSM
+!! compute surface drag coefficient cm for momentum and ch for heat.
   subroutine sfcdif1(parameters,iter   ,sfctmp ,rhoair ,h      ,qair   , & !in
        &             zlvl   ,zpd    ,z0m    ,z0h    ,ur     , & !in
        &             mpe    ,iloc   ,jloc   ,                 & !in
@@ -4621,6 +5109,8 @@ endif   ! croptype == 0
 !== begin sfcdif2 ==================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate surface layer exchange coefficients via iteractive process (Chen et
+!! al. 1997, blm)
   subroutine sfcdif2(parameters,iter   ,z0     ,thz0   ,thlm   ,sfcspd , & !in
                      zlm    ,iloc   ,jloc   ,         & !in
                      akms   ,akhs   ,rlmo   ,wstar2 ,         & !in
@@ -4828,6 +5318,8 @@ endif   ! croptype == 0
 !== begin esat =====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! use polynomials to calculate saturation vapor pressure and derivative with
+!! respect to temperature: over water when t > 0 c and over ice when t <= 0 c.
   subroutine esat(t, esw, esi, desw, desi)
 !---------------------------------------------------------------------------------------------------
 ! use polynomials to calculate saturation vapor pressure and derivative with
@@ -5016,6 +5508,10 @@ endif   ! croptype == 0
 !== begin canres ===================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate canopy resistance which depends on incoming solar radiation,
+!! air temperature, atmospheric water vapor pressure deficit at the lowest
+!! model level, and soil moisture (preferably unfrozen soil moisture rather
+!! than total).
   subroutine canres (parameters,par   ,sfctmp,rcsoil ,eah   ,sfcprs , & !in
                      rc    ,psn   ,iloc   ,jloc  )           !out
 
@@ -5133,6 +5629,10 @@ endif   ! croptype == 0
 !== begin tsnosoi ==================================================================================
 
 !>\ingroup NoahMP_LSM
+!! compute snow (up to 3l) and soil (4l) temperature. note that snow
+!! temperatures during melting season may exceed melting point (tfrz) but later
+!! in phasechange subroutine the snow temperatures are reset to tfrz for melting
+!! snow.
   subroutine tsnosoi (parameters,ice     ,nsoil   ,nsnow   ,isnow   ,ist     , & !in
                       tbot    ,zsnso   ,ssoil   ,df      ,hcpct   , & !in
                       sag     ,dt      ,snowh   ,dzsnso  , & !in
@@ -5269,6 +5769,9 @@ endif   ! croptype == 0
 !== begin hrt ======================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate the right hand side of the time tendency term of the soil
+!! thermal diffusion equation. also to compute (prepare) the matrix 
+!! coefficients for the tri-diagonal matrix of the implicit time scheme.
   subroutine hrt (parameters,nsnow     ,nsoil     ,isnow     ,zsnso     , &
                   stc       ,tbot      ,zbot      ,dt        , &
                   df        ,hcpct     ,ssoil     ,phi       , &
@@ -5372,6 +5875,7 @@ endif   ! croptype == 0
 !== begin hstep ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate/update the soil temperature fields.
   subroutine hstep (parameters,nsnow     ,nsoil     ,isnow     ,dt        ,  &
                     ai        ,bi        ,ci        ,rhsts     ,  &
                     stc       )  
@@ -5492,6 +5996,7 @@ endif   ! croptype == 0
 !== begin phasechange ==============================================================================
 
 !>\ingroup NoahMP_LSM
+!! melting/freezing of snow water and soil water
   subroutine phasechange (parameters,nsnow   ,nsoil   ,isnow   ,dt      ,fact    , & !in
                           dzsnso  ,hcpct   ,ist     ,iloc    ,jloc    , & !in
                           stc     ,snice   ,snliq   ,sneqv   ,snowh   , & !inout
@@ -5723,6 +6228,10 @@ endif   ! croptype == 0
 !== begin frh2o ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate amount of supercooled liquid soil water content if 
+!! temperature is below 273.15k (tfrz). requires newton-type iteration
+!! to solve the nonlinear implicit equation given in eqn 17 of koren et al.
+!! (1999, jgr, vol 104(d16),19569-19585)
   subroutine frh2o (parameters,isoil,free,tkelv,smc,sh2o,&
 #ifdef CCPP
      errmsg,errflg)
@@ -5812,8 +6321,8 @@ endif   ! croptype == 0
 1001      continue
           if (.not.( (nlog < 10) .and. (kcount == 0)))   goto 1002
           nlog = nlog +1
-          df = alog ( ( parameters%psisat(isoil) * grav / hfus ) * ( ( 1. + ck * swl )**2.) * &
-               ( parameters%smcmax(isoil) / (smc - swl) )** bx) - alog ( - (               &
+          df = log ( ( parameters%psisat(isoil) * grav / hfus ) * ( ( 1. + ck * swl )**2.) * &
+               ( parameters%smcmax(isoil) / (smc - swl) )** bx) - log ( - (               &
                tkelv - tfrz)/ tkelv)
           denom = 2. * ck / ( 1. + ck * swl ) + bx / ( smc - swl )
           swlk = swl - df / denom
@@ -6109,6 +6618,7 @@ endif   ! croptype == 0
 !== begin canwater =================================================================================
 
 !>\ingroup NoahMP_LSM
+!! canopy hydrology
   subroutine canwater (parameters,vegtyp ,dt     , & !in
                        fcev   ,fctr   ,elai   , & !in
                        esai   ,tg     ,fveg   ,iloc   , jloc , & !in
@@ -6346,8 +6856,10 @@ endif   ! croptype == 0
 
    if(isnow < 0) then  ! mb: only do for multi-layer
        sneqv = 0.
+       snowh = 0.
        do iz = isnow+1,0
              sneqv = sneqv + snice(iz) + snliq(iz)
+             snowh = snowh + dzsnso(iz)
        enddo
    end if
 
@@ -6376,6 +6888,8 @@ endif   ! croptype == 0
 !== begin snowfall =================================================================================
 
 !>\ingroup NoahMP_LSM
+!! snow depth and density to account for the new snowfall.
+!! new values of snow depth & density returned.
   subroutine snowfall (parameters,nsoil  ,nsnow  ,dt     ,qsnow  ,snowhin , & !in
                        sfctmp ,iloc   ,jloc   ,                  & !in
                        isnow  ,snowh  ,dzsnso ,stc    ,snice   , & !inout
@@ -6927,6 +7441,8 @@ endif   ! croptype == 0
 !== begin snowh2o ==================================================================================
 
 !>\ingroup NoahMP_LSM
+!! renew the mass of ice lens (snice) and liquid (snliq) of the 
+!! surface snow layer resulting from sublimation (frost) / evaporation (dew)
   subroutine snowh2o (parameters,nsnow  ,nsoil  ,dt     ,qsnfro ,qsnsub , & !in 
                       qrain  ,iloc   ,jloc   ,                 & !in
                       isnow  ,dzsnso ,snowh  ,sneqv  ,snice  , & !inout
@@ -7013,7 +7529,7 @@ endif   ! croptype == 0
       end if
    end if
 
-   if(snowh <= 1.e-8 .or. sneqv <= 1.e-6) then
+   if(snowh <= 1.e-6 .or. sneqv <= 1.e-3) then
      snowh = 0.0
      sneqv = 0.0
    end if
@@ -7077,6 +7593,7 @@ endif   ! croptype == 0
 !== begin soilwater ================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate surface runoff and soil moisture.
   subroutine soilwater (parameters,nsoil  ,nsnow  ,dt     ,zsoil  ,dzsnso , & !in
                         qinsur ,qseva  ,etrani ,sice   ,iloc   , jloc, & !in
                         sh2o   ,smc    ,zwt    ,vegtyp ,& !inout
@@ -7348,6 +7865,7 @@ endif   ! croptype == 0
 !== begin zwteq ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate equilibrium water table depth (niu et al., 2005)
   subroutine zwteq (parameters,nsoil  ,nsnow  ,zsoil  ,dzsnso ,sh2o   ,zwt)
 ! ----------------------------------------------------------------------
 ! calculate equilibrium water table depth (niu et al., 2005)
@@ -7405,6 +7923,7 @@ endif   ! croptype == 0
 !== begin infil ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! compute inflitration rate at soil surface and surface runoff
   subroutine infil (parameters,nsoil  ,dt     ,zsoil  ,sh2o   ,sice   , & !in
                     sicemax,qinsur ,                         & !in
                     pddum  ,runsrf )                           !out
@@ -7506,6 +8025,9 @@ endif   ! croptype == 0
 !== begin srt ======================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate the right hand side of the time tendency term of the soil 
+!! water diffusion equation. also to compute (prepare) the matrix coefficients
+!! for the tri-diagonal matrix of the implicit time scheme.
   subroutine srt (parameters,nsoil  ,zsoil  ,dt     ,pddum  ,etrani , & !in
                   qseva  ,sh2o   ,smc    ,zwt    ,fcr    , & !in
                   sicemax,fcrmax ,iloc   ,jloc   ,smcwtd ,         & !in
@@ -7640,6 +8162,7 @@ endif   ! croptype == 0
 !== begin sstep ====================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate/update soil moisture content values.
   subroutine sstep (parameters,nsoil  ,nsnow  ,dt     ,zsoil  ,dzsnso , & !in
                     sice   ,iloc   ,jloc   ,zwt            ,                 & !in
                     sh2o   ,smc    ,ai     ,bi     ,ci     , & !inout
@@ -7768,6 +8291,7 @@ endif   ! croptype == 0
 !== begin wdfcnd1 ==================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate soil water diffusivity and soil hydraulic conductivity.
   subroutine wdfcnd1 (parameters,wdf,wcnd,smc,fcr,isoil)
 ! ----------------------------------------------------------------------
 ! calculate soil water diffusivity and soil hydraulic conductivity.
@@ -7808,6 +8332,7 @@ endif   ! croptype == 0
 !== begin wdfcnd2 ==================================================================================
 
 !>\ingroup NoahMP_LSM
+!! calculate soil water diffusivity and soil hydraulic conductivity.
   subroutine wdfcnd2 (parameters,wdf,wcnd,smc,sice,isoil)
 ! ----------------------------------------------------------------------
 ! calculate soil water diffusivity and soil hydraulic conductivity.
@@ -8041,6 +8566,8 @@ endif   ! croptype == 0
 !== begin shallowwatertable ========================================================================
 
 !>\ingroup NoahMP_LSM
+!! diagnoses water table depth and computes recharge when the water table is
+!! within the resolved soil layers, according to the miguez-macho&fan scheme.
   subroutine shallowwatertable (parameters,nsnow  ,nsoil  ,zsoil, dt    , & !in
                          dzsnso ,smceq ,iloc   ,jloc         , & !in
                          smc    ,wtd   ,smcwtd ,rech, qdrain  )  !inout
@@ -8299,6 +8826,8 @@ end  subroutine shallowwatertable
 !== begin co2flux ==================================================================================
 
 !>\ingroup NoahMP_LSM
+!! the original code is from Dickinson et al.(1998), modified by guo-yue niu,
+!! 2004
   subroutine co2flux (parameters,nsnow  ,nsoil  ,vegtyp ,igs    ,dt     , & !in
                       dzsnso ,stc    ,psn    ,troot  ,tv     , & !in
                       wroot  ,wstres ,foln   ,lapm   ,         & !in
@@ -8570,7 +9099,9 @@ end  subroutine shallowwatertable
   end subroutine co2flux
 
 !== begin carbon_crop ==============================================================================
-
+!>\ingroup NoahMP_LSM
+!! initial crop version created by xing liu
+!! initial crop version added by barlage v3.8
  subroutine carbon_crop (parameters,nsnow  ,nsoil  ,vegtyp ,dt     ,zsoil  ,julian , & !in
                             dzsnso ,stc    ,smc    ,tv     ,psn    ,foln   ,btran  , & !in
                             soldn  ,t2m    ,                                         & !in
@@ -8688,7 +9219,9 @@ end  subroutine shallowwatertable
   end subroutine carbon_crop
 
 !== begin co2flux_crop =============================================================================
-
+!>\ingroup NoahMP_LSM
+!! the original code from re dickinson et al.(1998) and guo-yue niu (2004),
+!! modified by xing liu, 2014.
   subroutine co2flux_crop (parameters,                                              & !in
                            dt     ,stc    ,psn    ,tv     ,wroot  ,wstres ,foln   , & !in
                            ipa    ,iha    ,pgs    ,                                 & !in xing
@@ -8969,7 +9502,7 @@ end  subroutine shallowwatertable
 end subroutine co2flux_crop
 
 !== begin growing_gdd ==============================================================================
-
+!>\ingroup NoahMP_LSM
   subroutine growing_gdd (parameters,                         & !in
                           t2m ,   dt, julian,                 & !in
                           gdd ,                               & !inout 
@@ -9066,7 +9599,7 @@ end subroutine co2flux_crop
 end subroutine growing_gdd
 
 !== begin psn_crop =================================================================================
-
+!>\ingroup NoahMP_LSM
 subroutine psn_crop ( parameters,       & !in
                       soldn, xlai,t2m,  & !in
                       psncrop        )    !out
