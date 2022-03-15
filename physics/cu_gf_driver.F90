@@ -331,6 +331,7 @@ contains
 ! these should be coming in from outside
 !
 !    cactiv(:)      = 0
+!    cactiv_m(:)    = 0
      rand_mom(:)    = 0.
      rand_vmas(:)   = 0.
      rand_clos(:,:) = 0.
