@@ -307,7 +307,7 @@ contains
      subroutine ugwpv1_gsldrag_run(me, master, im,  levs, ntrac, lonr, dtp, fhzero,kdt, &
           ldiag3d, lssav, flag_for_gwd_generic_tend, do_gsl_drag_ls_bl, do_gsl_drag_ss, &
           do_gsl_drag_tofd, do_ugwp_v1, do_ugwp_v1_orog_only, do_ugwp_v1_w_gsldrag,     &
-          gwd_opt, do_tofd, ldiag_ugwp, cdmbgwd, jdat,                                  &
+          gwd_opt, do_tofd, ldiag_ugwp, ldiag_ugwp_gsl, cdmbgwd, jdat,                  &
           nmtvr, hprime, oc, theta, sigma, gamma, elvmax, clx, oa4,                     &
           varss,oc1ss,oa4ss,ol4ss, dx,  xlat, xlat_d, sinlat, coslat, area,             &
           rain, br1, hpbl, kpbl, slmsk,                                                 &
@@ -360,7 +360,7 @@ contains
 ! flags for choosing combination of GW drag schemes to run
 
     logical,  intent (in) :: do_gsl_drag_ls_bl, do_gsl_drag_ss, do_gsl_drag_tofd
-    logical,  intent (in) :: do_ugwp_v1, do_ugwp_v1_orog_only, do_tofd, ldiag_ugwp
+    logical,  intent (in) :: do_ugwp_v1, do_ugwp_v1_orog_only, do_tofd, ldiag_ugwp, ldiag_ugwp_gsl
     logical,  intent (in) :: do_ugwp_v1_w_gsldrag                              ! combination of ORO and NGW schemes
 
     integer,                 intent(in) :: me, master, im, levs, ntrac,lonr
@@ -495,7 +495,7 @@ contains
 !===============================================================
 ! ORO-diag
 
-       if (do_ugwp_v1 .or. gwd_opt==33 .or. gwd_opt==22) then
+       if (do_ugwp_v1 .or. ldiag_ugwp_gsl) then
          dudt_ogw(:,:)= 0.; dvdt_ogw(:,:)=0.; dudt_obl(:,:)=0.; dvdt_obl(:,:)=0.
          dudt_oss(:,:)= 0.; dvdt_oss(:,:)=0.; dudt_ofd(:,:)=0.; dvdt_ofd(:,:)=0.
          du_ogwcol(:)=0. ; dv_ogwcol(:)=0. ; du_oblcol(:)=0. ; dv_oblcol(:)=0.
@@ -562,8 +562,8 @@ contains
                  do_gsl_drag_ls_bl,do_gsl_drag_ss,do_gsl_drag_tofd,  &
                  dtend, dtidx, index_of_process_orographic_gwd,      &
                  index_of_temperature, index_of_x_wind,              &
-                 index_of_y_wind, ldiag3d, spp_wts_gwd, spp_gwd,     &
-                 errmsg, errflg)
+                 index_of_y_wind, ldiag3d, ldiag_ugwp_gsl,           &
+                 spp_wts_gwd, spp_gwd, errmsg, errflg)
 !
 ! dusfcg = du_ogwcol + du_oblcol + du_osscol + du_ofdcol
 !

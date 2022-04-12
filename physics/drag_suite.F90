@@ -218,7 +218,7 @@
      &           do_gsl_drag_ls_bl, do_gsl_drag_ss, do_gsl_drag_tofd,   &
      &           dtend, dtidx, index_of_process_orographic_gwd,         &
      &           index_of_temperature, index_of_x_wind,                 &
-     &           index_of_y_wind, ldiag3d,                              &
+     &           index_of_y_wind, ldiag3d, ldiag_ugwp_gsl,              &
      &           spp_wts_gwd, spp_gwd, errmsg, errflg)
 
 !   ********************************************************************
@@ -399,6 +399,10 @@
       do_gsl_drag_ls_bl,       & ! large-scale gravity wave drag and blocking
       do_gsl_drag_ss,          & ! small-scale gravity wave drag (Steeneveld et al. 2008)
       do_gsl_drag_tofd           ! form drag (Beljaars et al. 2004, QJRMS)
+
+
+! Flag for diagnostic outputs
+      logical, intent(in) :: ldiag_ugwp_gsl
 
 ! Additional flags
       integer, parameter ::    &
@@ -676,7 +680,7 @@ enddo
      enddo
    enddo
 !
-   if ( (gwd_opt == 33).or.(gwd_opt == 22) ) then
+   if ( ldiag_ugwp_gsl ) then
      do i = its,im
        dusfc_ls(i) = 0.0
        dvsfc_ls(i) = 0.0
@@ -1055,7 +1059,7 @@ IF ( do_gsl_drag_ss ) THEN
          if(vdtend>0) then
             dtend(i,kts:km,vdtend) = dtend(i,kts:km,vdtend) + vtendwave(i,kts:km)*deltim
          endif
-         if ( (gwd_opt == 33).or.(gwd_opt == 22) ) then
+         if ( ldiag_ugwp_gsl ) then
             do k = kts,km
                dusfc_ss(i) = dusfc_ss(i) + utendwave(i,k) * del(i,k)
                dvsfc_ss(i) = dvsfc_ss(i) + vtendwave(i,k) * del(i,k)
@@ -1120,7 +1124,7 @@ IF ( do_gsl_drag_tofd ) THEN
          if(vdtend>0) then
             dtend(i,kts:km,vdtend) = dtend(i,kts:km,vdtend) + vtendform(i,kts:km)*deltim
          endif
-         if ( (gwd_opt == 33).or.(gwd_opt == 22) ) then
+         if ( ldiag_ugwp_gsl ) then
             do k = kts,km
                dtaux2d_fd(i,k) = utendform(i,k)
                dtauy2d_fd(i,k) = vtendform(i,k)
@@ -1340,7 +1344,7 @@ IF ( (do_gsl_drag_ls_bl) .and.                                       &
          dusfc(i) = (-1./g*rcs) * dusfc(i)
          dvsfc(i) = (-1./g*rcs) * dvsfc(i)
 
-         if ( (gwd_opt == 33).or.(gwd_opt == 22) ) then
+         if ( ldiag_ugwp_gsl ) then
             do k = kts,km
                dtaux2d_ls(i,k) = taud_ls(i,k) * xn(i)
                dtauy2d_ls(i,k) = taud_ls(i,k) * yn(i)
@@ -1359,7 +1363,7 @@ IF ( (do_gsl_drag_ls_bl) .and.                                       &
 
 ENDIF  ! (do_gsl_drag_ls_bl).and.(gwd_opt_ls.EQ.1 .OR. gwd_opt_bl.EQ.1)
 
-if ( (gwd_opt == 33).or.(gwd_opt == 22) ) then
+if ( ldiag_ugwp_gsl ) then
   !  Finalize dusfc and dvsfc diagnostics
   do i = its,im
     dusfc_ls(i) = (-1./g*rcs) * dusfc_ls(i)

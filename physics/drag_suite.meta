@@ -624,6 +624,13 @@
   dimensions = ()
   type = logical
   intent = in
+[ldiag_ugwp_gsl]
+  standard_name = diag_ugwp_gsl_flag
+  long_name = flag for CIRES UGWP with GSL drag Diagnostics
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
 [spp_wts_gwd]
   standard_name = spp_weights_for_gravity_wave_drag_scheme
   long_name = spp weights for gravity wave drag scheme

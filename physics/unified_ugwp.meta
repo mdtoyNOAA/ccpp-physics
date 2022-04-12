@@ -592,6 +592,30 @@
   type = real
   kind = kind_phys
   intent = out
+[dudt_ngw]
+  standard_name = tendency_of_x_wind_due_to_nonorographic_gravity_wave_drag
+  long_name = zonal wind tendency due to non-stationary GWs
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[dvdt_ngw]
+  standard_name = tendency_of_y_wind_due_to_nonorographic_gravity_wave_drag
+  long_name = meridional wind tendency due to non-stationary GWs
+  units = m s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
+[dtdt_ngw]
+  standard_name = tendency_of_air_temperature_due_to_nonorographic_gravity_wave_drag
+  long_name = air temperature tendency due to non-stationary GWs
+  units = K s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = out
 [br1]
   standard_name = bulk_richardson_number_at_lowest_model_level
   long_name = bulk Richardson number at the surface
@@ -626,6 +650,13 @@
 [ldiag_ugwp]
   standard_name = flag_for_unified_gravity_wave_physics_diagnostics
   long_name = flag for CIRES UGWP Diagnostics
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[ldiag_ugwp_gsl]
+  standard_name = diag_ugwp_gsl_flag
+  long_name = flag for CIRES UGWP with GSL drag Diagnostics
   units = flag
   dimensions = ()
   type = logical

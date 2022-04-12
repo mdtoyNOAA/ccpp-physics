@@ -197,8 +197,11 @@
      &           IM,KM,A,B,C,U1,V1,T1,Q1,KPBL,                          &
      &           PRSI,DEL,PRSL,PRSLK,PHII, PHIL,DELTIM,KDT,             &
      &           HPRIME,OC,OA4,CLX4,THETA,SIGMA,GAMMA,ELVMAX,           &
-     &           DUSFC,DVSFC,G, CP, RD, RV, IMX,                        &
-     &           nmtvr, cdmbgwd, me, lprnt, ipr, rdxzb, errmsg, errflg)
+     &           DUSFC,DVSFC,dtaux2d_ls,dtauy2d_ls,dtaux2d_bl,          &
+     &           dtauy2d_bl,dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,        &
+     &           G, CP, RD, RV, IMX,                                    &
+     &           nmtvr, cdmbgwd, me, lprnt, ipr, rdxzb, ldiag_ugwp_gsl, &
+     &           errmsg, errflg)
 !
 !   ********************************************************************
 ! ----->  I M P L E M E N T A T I O N    V E R S I O N   <----------
@@ -313,8 +316,14 @@
      &                     THETA(:), SIGMA(:), GAMMA(:)
       real(kind=kind_phys), intent(out) :: DUSFC(:), DVSFC(:),          &
      &                     RDXZB(:)
+      real(kind=kind_phys), intent(inout) :: dtaux2d_ls(IM,KM),         &
+     &                     dtauy2d_ls(IM,KM),dtaux2d_bl(IM,KM),         &
+     &                     dtauy2d_bl(IM,KM)
+      real(kind=kind_phys), intent(inout) :: dusfc_ls(IM), dvsfc_ls(IM), &
+     &                     dusfc_bl(IM), dvsfc_bl(IM)
       integer, intent(in) :: nmtvr
       logical, intent(in) :: lprnt
+      logical, intent(in) :: ldiag_ugwp_gsl
       character(len=*), intent(out) :: errmsg
       integer,          intent(out) :: errflg
 !
@@ -1242,6 +1251,13 @@
             tem1     = DBIM * DEL(J,K)
             DUSFC(J) = DUSFC(J) - tem1 * U1(J,K)
             DVSFC(J) = DVSFC(J) - tem1 * V1(J,K)
+            ! Output blocking tendencies if ldiag_ugwp_gsl=.true.
+            if (ldiag_ugwp_gsl) then
+               dtaux2d_bl(j,k) = - DBIM * U1(J,K)
+               dtauy2d_bl(j,k) = - DBIM * V1(J,K)
+               dusfc_bl(j) = dusfc_bl(j) + dtaux2d_bl(j,k) * del(j,k)
+               dvsfc_bl(j) = dvsfc_bl(j) + dtauy2d_bl(j,k) * del(j,k)
+            end if
           else                                         ! orographic GWD applied
                                                        ! ----------------------
             A(J,K)   = DTAUY + A(J,K)
@@ -1251,6 +1267,13 @@
             ENG1     = 0.5 * (tem1*tem1+tem2*tem2)
             DUSFC(J) = DUSFC(J) + DTAUX * DEL(J,K)
             DVSFC(J) = DVSFC(J) + DTAUY * DEL(J,K)
+            ! Output large-scale GWD tendencies if ldiag_ugwp_gsl=.ture.
+            if (ldiag_ugwp_gsl) then
+               dtaux2d_ls(j,k) = DTAUX
+               dtauy2d_ls(j,k) = DTAUY
+               dusfc_ls(j) = dusfc_ls(j) + DTAUX * del(j,k)
+               dvsfc_ls(j) = dvsfc_ls(j) + DTAUY * del(j,k)
+            end if
           endif
           C(J,K) = C(J,K) + max(ENG0-ENG1,0.) * oneocpdt
         ENDDO
@@ -1267,6 +1290,12 @@
 !       TEM      = (-1.E3/G)
         DUSFC(J) = - onebg * DUSFC(J)
         DVSFC(J) = - onebg * DVSFC(J)
+        if (ldiag_ugwp_gsl) then
+           dusfc_ls(j) = - onebg * dusfc_ls(j)
+           dvsfc_ls(j) = - onebg * dvsfc_ls(j)
+           dusfc_bl(j) = - onebg * dusfc_bl(j)
+           dvsfc_bl(j) = - onebg * dvsfc_bl(j)
+        end if
       ENDDO
 !
 !    MONITOR FOR EXCESSIVE GRAVITY WAVE DRAG TENDENCIES IF NCNT>0

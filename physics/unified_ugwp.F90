@@ -206,17 +206,19 @@ contains
          lonr, oro, oro_uf, hprime, nmtvr, oc, theta, sigma, gamma, elvmax, clx, oa4,  &
          varss,oc1ss,oa4ss,ol4ss,dx,dusfc_ls,dvsfc_ls,dusfc_bl,dvsfc_bl,dusfc_ss,      &
          dvsfc_ss,dusfc_fd,dvsfc_fd,dtaux2d_ls,dtauy2d_ls,dtaux2d_bl,dtauy2d_bl,       &
-         dtaux2d_ss,dtauy2d_ss,dtaux2d_fd,dtauy2d_fd,br1,hpbl,slmsk,                   &
-         do_tofd, ldiag_ugwp, cdmbgwd, jdat, xlat, xlat_d, sinlat, coslat, area,       &
+         dtaux2d_ss,dtauy2d_ss,dtaux2d_fd,dtauy2d_fd,dudt_ngw,dvdt_ngw,dtdt_ngw,       &
+         br1,hpbl,slmsk, do_tofd, ldiag_ugwp, ldiag_ugwp_gsl, cdmbgwd,                 &
+         jdat, xlat, xlat_d, sinlat, coslat, area,                                     &
          ugrs, vgrs, tgrs, q1, prsi, prsl, prslk, phii, phil,                          &
          del, kpbl, dusfcg, dvsfcg, gw_dudt, gw_dvdt, gw_dtdt, gw_kdis,                &
          tau_tofd, tau_mtb, tau_ogw, tau_ngw, zmtb, zlwb, zogw,                        &
          dudt_mtb, dudt_tms, du3dt_mtb, du3dt_ogw, du3dt_tms,                          &
          dudt, dvdt, dtdt, rdxzb, con_g, con_omega, con_pi, con_cp, con_rd, con_rv,    &
          con_rerth, con_fvirt, rain, ntke, q_tke, dqdt_tke, lprnt, ipr,                &
-         dtend, dtidx, index_of_temperature, index_of_x_wind, index_of_y_wind,         &
-         index_of_process_orographic_gwd, index_of_process_nonorographic_gwd,          &
-         ldiag3d, lssav, flag_for_gwd_generic_tend, do_ugwp_v0, do_ugwp_v0_orog_only,  &
+         ldiag3d, dtend, dtidx, index_of_temperature, index_of_x_wind,                 &
+         index_of_y_wind, index_of_process_orographic_gwd,                             &
+         index_of_process_nonorographic_gwd,                                           &
+         lssav, flag_for_gwd_generic_tend, do_ugwp_v0, do_ugwp_v0_orog_only,           &
          do_ugwp_v0_nst_only, do_gsl_drag_ls_bl, do_gsl_drag_ss, do_gsl_drag_tofd,     &
          gwd_opt, spp_wts_gwd, spp_gwd, errmsg, errflg)
 
@@ -244,7 +246,7 @@ contains
     real(kind=kind_phys),    intent(in),    dimension(:,:)  :: q1
     real(kind=kind_phys),    intent(in) :: dtp, fhzero, cdmbgwd(:)
     integer, intent(in) :: jdat(:)
-    logical,                 intent(in) :: do_tofd, ldiag_ugwp
+    logical,                 intent(in) :: do_tofd, ldiag_ugwp, ldiag_ugwp_gsl
 
 !Output (optional):
     real(kind=kind_phys), intent(out) ::                          &
@@ -253,9 +255,11 @@ contains
       &                      dusfc_ss(:),dvsfc_ss(:),             &
       &                      dusfc_fd(:),dvsfc_fd(:)
     real(kind=kind_phys), intent(out) ::                          &
+      &         dtaux2d_ls(:,:),dtauy2d_ls(:,:),                  &
       &         dtaux2d_bl(:,:),dtauy2d_bl(:,:),                  &
       &         dtaux2d_ss(:,:),dtauy2d_ss(:,:),                  &
-      &         dtaux2d_fd(:,:),dtauy2d_fd(:,:)
+      &         dtaux2d_fd(:,:),dtauy2d_fd(:,:),                  &
+      &         dudt_ngw(:,:),dvdt_ngw(:,:),dtdt_ngw(:,:)
 
     real(kind=kind_phys), intent(in) ::     br1(:),               &
       &                                     hpbl(:),              &
@@ -266,7 +270,6 @@ contains
     real(kind=kind_phys),    intent(out), dimension(:)          :: tau_mtb, tau_ogw, tau_tofd, tau_ngw
     real(kind=kind_phys),    intent(out), dimension(:,:)        :: gw_dudt, gw_dvdt, gw_dtdt, gw_kdis
     real(kind=kind_phys),    intent(out), dimension(:,:)        :: dudt_mtb, dudt_tms
-    real(kind=kind_phys),    intent(out), dimension(:,:)        :: dtaux2d_ls, dtauy2d_ls
 
     real(kind=kind_phys), intent(inout) :: dtend(:,:,:)
     integer, intent(in) :: dtidx(:,:), index_of_temperature, index_of_x_wind, &
@@ -346,8 +349,8 @@ contains
                  do_gsl_drag_ls_bl,do_gsl_drag_ss,do_gsl_drag_tofd,  &
                  dtend, dtidx, index_of_process_orographic_gwd,      &
                  index_of_temperature, index_of_x_wind,              &
-                 index_of_y_wind, ldiag3d, spp_wts_gwd, spp_gwd,     &
-                 errmsg, errflg)
+                 index_of_y_wind, ldiag3d, ldiag_ugwp_gsl,           &
+                 spp_wts_gwd, spp_gwd, errmsg, errflg)
 !
 ! put zeros due to xy GSL-drag style: dtaux2d_bl,dtauy2d_bl,dtaux2d_ss.......dusfc_ls,dvsfc_ls
 !
@@ -380,14 +383,23 @@ contains
            nmtvr_temp = nmtvr
         end if
 
+        if (ldiag_ugwp_gsl) then
+           dtaux2d_ls = 0.0 ; dtauy2d_ls = 0.0
+           dtaux2d_bl = 0.0 ; dtauy2d_bl = 0.0
+           dusfc_ls = 0.0 ; dvsfc_ls = 0.0
+           dusfc_bl = 0.0 ; dvsfc_bl = 0.0
+        end if
+
         call gwdps_run(im, levs, Pdvdt, Pdudt, Pdtdt,                  &
                    ugrs, vgrs, tgrs, q1,                               &
                    kpbl, prsi, del, prsl, prslk, phii, phil, dtp, kdt, &
                    hprime, oc, oa4, clx, theta, sigma, gamma,          &
-                   elvmax, dusfcg, dvsfcg,                             &
+                   elvmax, dusfcg, dvsfcg, dtaux2d_ls, dtauy2d_ls,     &
+                   dtaux2d_bl, dtauy2d_bl, dusfc_ls, dvsfc_ls,         &
+                   dusfc_bl, dvsfc_bl,                                 &
                    con_g,  con_cp, con_rd, con_rv, lonr,               &
                    nmtvr_temp, cdmbgwd, me, lprnt, ipr, rdxzb,         &
-                   errmsg, errflg)
+                   ldiag_ugwp_gsl, errmsg, errflg)
         if (errflg/=0) return
       endif
 
@@ -470,6 +482,11 @@ contains
         call fv3_ugwp_solv2_v0(im, levs, dtp, tgrs, ugrs, vgrs, q1,                        &
              prsl, prsi, phil, xlat_d, sinlat, coslat, gw_dudt, gw_dvdt, gw_dtdt, gw_kdis, &
              tau_ngw, me, master, kdt)
+
+        ! Save u, v, and t non-orogarphic tendencies for diagnostic output
+        dudt_ngw = gw_dudt
+        dvdt_ngw = gw_dvdt
+        dtdt_ngw = gw_dtdt
 
         do k=1,levs
           do i=1,im
