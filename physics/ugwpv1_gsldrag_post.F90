@@ -23,6 +23,7 @@ contains
          dudt_ngw, dvdt_ngw, dtdt_ngw,                                &
          ldu3dt_ngw, ldv3dt_ngw, ldt3dt_ngw,                          &
          dws3dt_ogw, dws3dt_obl, dws3dt_oss, dws3dt_ofd,              &
+         ldu3dt_ogw, ldu3dt_obl, ldu3dt_oss, ldu3dt_ofd,              &
          du_ogwcol, dv_ogwcol, du_oblcol, dv_oblcol, du_osscol,       &
          dv_osscol, du_ofdcol, dv_ofdcol, du3_ogwcol, dv3_ogwcol,     &
          du3_oblcol, dv3_oblcol, du3_osscol, dv3_osscol, du3_ofdcol,  &
@@ -54,6 +55,8 @@ contains
         real(kind=kind_phys), intent(inout), dimension(:,:) :: ldu3dt_ngw, ldv3dt_ngw, ldt3dt_ngw
         real(kind=kind_phys), intent(inout), dimension(:,:) :: dws3dt_ogw, dws3dt_obl
         real(kind=kind_phys), intent(inout), dimension(:,:) :: dws3dt_oss, dws3dt_ofd
+        real(kind=kind_phys), intent(inout), dimension(:,:) :: ldu3dt_ogw, ldu3dt_obl
+        real(kind=kind_phys), intent(inout), dimension(:,:) :: ldu3dt_oss, ldu3dt_ofd
         real(kind=kind_phys), intent(in),    dimension(:)   :: du_ogwcol, dv_ogwcol
         real(kind=kind_phys), intent(in),    dimension(:)   :: dv_oblcol
         real(kind=kind_phys), intent(in),    dimension(:)   :: du_osscol, dv_osscol
@@ -102,6 +105,11 @@ contains
           if (ldiag_ugwp_gsl) then
              dws3dt_oss = dws3dt_oss + dtf *sqrt(dudt_oss**2+dvdt_oss**2)
              dws3dt_ofd = dws3dt_ofd + dtf *sqrt(dudt_ofd**2+dvdt_ofd**2)
+
+             ldu3dt_ogw = ldu3dt_ogw + dtf *dudt_ogw
+             ldu3dt_obl = ldu3dt_obl + dtf *dudt_obl
+             ldu3dt_oss = ldu3dt_oss + dtf *dudt_oss
+             ldu3dt_ofd = ldu3dt_ofd + dtf *dudt_ofd
 
              du3_osscol = du3_osscol + dtf*du_osscol
              dv3_osscol = dv3_osscol + dtf*dv_osscol

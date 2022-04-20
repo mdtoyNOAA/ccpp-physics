@@ -22,6 +22,7 @@ contains
          dudt_tms, tot_zmtb, tot_zlwb, tot_zogw,                    &
          tot_tofd, tot_mtb, tot_ogw, tot_ngw,                       &
          du3dt_mtb,du3dt_ogw, du3dt_tms, du3dt_ngw, dv3dt_ngw,      &
+         ldu3dt_ogw, ldu3dt_obl, ldu3dt_oss, ldu3dt_ofd,            &
          dudt_ngw, dvdt_ngw, dtdt_ngw,                              &
          ldu3dt_ngw, ldv3dt_ngw, ldt3dt_ngw, dudt_obl, dvdt_obl,    &
          dudt_oss, dvdt_oss, dudt_ofd, dvdt_ofd, dws3dt_ogw,        &
@@ -48,6 +49,7 @@ contains
         real(kind=kind_phys), intent(in),    dimension(:,:) :: gw_dtdt, gw_dudt, gw_dvdt, dudt_mtb
         real(kind=kind_phys), intent(in),    dimension(:,:) :: dudt_ogw, dvdt_ogw, dudt_tms
         real(kind=kind_phys), intent(inout), dimension(:,:) :: du3dt_mtb, du3dt_ogw, du3dt_tms, du3dt_ngw, dv3dt_ngw
+        real(kind=kind_phys), intent(inout), dimension(:,:) :: ldu3dt_ogw, ldu3dt_obl, ldu3dt_oss, ldu3dt_ofd
         real(kind=kind_phys), intent(in),    dimension(:,:) :: dudt_ngw, dvdt_ngw, dtdt_ngw
         real(kind=kind_phys), intent(inout), dimension(:,:) :: ldu3dt_ngw, ldv3dt_ngw, ldt3dt_ngw
         real(kind=kind_phys), intent(in),    dimension(:,:) :: dudt_obl, dvdt_obl
@@ -93,6 +95,10 @@ contains
           dws3dt_obl = dws3dt_obl + dtf *sqrt(dudt_obl**2+dvdt_obl**2)
           dws3dt_oss = dws3dt_oss + dtf *sqrt(dudt_oss**2+dvdt_oss**2)
           dws3dt_ofd = dws3dt_ofd + dtf *sqrt(dudt_ofd**2+dvdt_ofd**2)
+          ldu3dt_ogw  = ldu3dt_ogw  + dtf *dudt_ogw
+          ldu3dt_obl  = ldu3dt_obl  + dtf *dudt_obl
+          ldu3dt_oss  = ldu3dt_oss  + dtf *dudt_oss
+          ldu3dt_ofd  = ldu3dt_ofd  + dtf *dudt_ofd
           du3_ogwcol = du3_ogwcol + dtf *du_ogwcol
           dv3_ogwcol = dv3_ogwcol + dtf *dv_ogwcol
           du3_oblcol = du3_oblcol + dtf *du_oblcol

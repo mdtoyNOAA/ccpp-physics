@@ -354,6 +354,38 @@
   type = real
   kind = kind_phys
   intent = inout
+[ldu3dt_ogw]
+  standard_name = cumulative_change_in_x_wind_due_to_mesoscale_orographic_gravity_wave_drag
+  long_name = cumulative change in x wind due to mesoscale orographic gravity wave drag
+  units = m s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[ldu3dt_obl]
+  standard_name = cumulative_change_in_x_wind_due_to_blocking_drag
+  long_name = cumulative change in x wind due to blocking drag
+  units = m s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[ldu3dt_oss]
+  standard_name = cumulative_change_in_x_wind_due_to_small_scale_gravity_wave_drag
+  long_name = cumulative change in x wind due to small scale gravity wave drag
+  units = m s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
+[ldu3dt_ofd]
+  standard_name = cumulative_change_in_x_wind_due_to_form_drag
+  long_name = cumulative change in x wind due to form drag
+  units = m s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = inout
 [du_ogwcol]
   standard_name = vertically_integrated_x_momentum_flux_due_to_mesoscale_orographic_gravity_wave_drag
   long_name = integrated x momentum flux from meso scale ogw
