@@ -249,7 +249,7 @@ contains
          varss,oc1ss,oa4ss,ol4ss,dx,dusfc_ms,dvsfc_ms,dusfc_bl,dvsfc_bl,dusfc_ss,      &
          dvsfc_ss,dusfc_fd,dvsfc_fd,dtaux2d_ms,dtauy2d_ms,dtaux2d_bl,dtauy2d_bl,       &
          dtaux2d_ss,dtauy2d_ss,dtaux2d_fd,dtauy2d_fd,dudt_ngw,dvdt_ngw,dtdt_ngw,       &
-         br1,hpbl,slmsk, do_tofd, ldiag_ugwp, ugwp_seq_update,                         &
+         br1,hpbl,vtype,slmsk, do_tofd, ldiag_ugwp, ugwp_seq_update,                   &
          cdmbgwd, jdat, xlat, xlat_d, sinlat, coslat, area,                            &
          ugrs, vgrs, tgrs, q1, prsi, prsl, prslk, phii, phil,                          &
          del, kpbl, dusfcg, dvsfcg, gw_dudt, gw_dvdt, gw_dtdt, gw_kdis,                &
@@ -262,6 +262,7 @@ contains
          index_of_process_nonorographic_gwd,                                           &
          lssav, flag_for_gwd_generic_tend, do_ugwp_v0, do_ugwp_v0_orog_only,           &
          do_ugwp_v0_nst_only, do_gsl_drag_ls_bl, do_gsl_drag_ss, do_gsl_drag_tofd,     &
+         do_gwd_opt_psl, psl_gwd_dx_factor,                                            &
          gwd_opt, spp_wts_gwd, spp_gwd, errmsg, errflg)
 
     implicit none
@@ -270,6 +271,7 @@ contains
     integer,                 intent(in) :: me, master, im, levs, ntrac, kdt, lonr, nmtvr
     integer,                 intent(in) :: gwd_opt
     integer,                 intent(in), dimension(:)       :: kpbl
+    integer,                 intent(in), dimension(:)       :: vtype
     real(kind=kind_phys),    intent(in), dimension(:)       :: ak, bk
     real(kind=kind_phys),    intent(in), dimension(:)       :: oro, oro_uf, hprime, oc, theta, sigma, gamma
     real(kind=kind_phys),    intent(in), dimension(:)       :: varss,oc1ss, dx
@@ -344,6 +346,10 @@ contains
 
     real(kind=kind_phys), intent(in) :: spp_wts_gwd(:,:)
     integer, intent(in) :: spp_gwd
+
+    ! option  for psl gwd
+    logical, intent(in)              :: do_gwd_opt_psl      ! option for psl gravity wave drag
+    real(kind=kind_phys), intent(in) :: psl_gwd_dx_factor   ! 
 
     character(len=*),        intent(out) :: errmsg
     integer,                 intent(out) :: errflg
@@ -496,10 +502,11 @@ contains
                  dtauy2d_ss,dtaux2d_fd,dtauy2d_fd,dusfcg,            &
                  dvsfcg,dusfc_ms,dvsfc_ms,dusfc_bl,dvsfc_bl,         &
                  dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd,                &
-                 slmsk,br1,hpbl,con_g,con_cp,con_rd,con_rv,          &
+                 slmsk,br1,hpbl,vtype,con_g,con_cp,con_rd,con_rv,    &
                  con_fvirt,con_pi,lonr,                              &
                  cdmbgwd,me,master,lprnt,ipr,rdxzb,dx,gwd_opt,       &
                  do_gsl_drag_ls_bl,do_gsl_drag_ss,do_gsl_drag_tofd,  &
+                 do_gwd_opt_psl, psl_gwd_dx_factor,                  &
                  dtend, dtidx, index_of_process_orographic_gwd,      &
                  index_of_temperature, index_of_x_wind,              &
                  index_of_y_wind, ldiag3d, ldiag_ugwp,               &

@@ -218,10 +218,11 @@
      &           dusfc,dvsfc,                                           &
      &           dusfc_ms,dvsfc_ms,dusfc_bl,dvsfc_bl,                   &
      &           dusfc_ss,dvsfc_ss,dusfc_fd,dvsfc_fd,                   &
-     &           slmsk,br1,hpbl,                                        &
+     &           slmsk,br1,hpbl,vtype,                                  &
      &           g, cp, rd, rv, fv, pi, imx, cdmbgwd, me, master,       &
      &           lprnt, ipr, rdxzb, dx, gwd_opt,                        &
      &           do_gsl_drag_ls_bl, do_gsl_drag_ss, do_gsl_drag_tofd,   &
+     &           do_gwd_opt_psl, psl_gwd_dx_factor,                     &
      &           dtend, dtidx, index_of_process_orographic_gwd,         &
      &           index_of_temperature, index_of_x_wind,                 &
      &           index_of_y_wind, ldiag3d, ldiag_ugwp, ugwp_seq_update, & 
@@ -273,6 +274,7 @@
 !                    gwd_opt_bl = : blocking drag (active if == .true.)
 !
 !  References:
+!        Choi and Hong (2015) J. Geophys. Res.
 !        Hong et al. (2008), wea. and forecasting
 !        Kim and Doyle (2005), Q. J. R. Meteor. Soc.
 !        Kim and Arakawa (1995), j. atmos. sci.
@@ -360,6 +362,7 @@
 
 ! added for small-scale orographic wave drag
    real(kind=kind_phys), dimension(im,km) :: utendwave,vtendwave,thx,thvx
+   integer, intent(in)                    ::   vtype(:)
    real(kind=kind_phys), intent(in) ::     br1(:),              &
      &                                     hpbl(:),             &
      &                                     slmsk(:)
@@ -444,6 +447,14 @@
    real(kind=kind_phys)                 :: a1,a2,wsp
    real(kind=kind_phys)                 :: H_efold
 
+!
+!!!   logical, parameter :: do_gwd_opt_psl      = .true.      & ! psl gravity wave drag
+!!!   real(kind=kind_phys), parameter       :: psl_gwd_dx_factor     = 6.0
+!
+! option  for psl gwd
+   logical, intent(in)              :: do_gwd_opt_psl      ! option for psl gravity wave drag
+   real(kind=kind_phys), intent(in) :: psl_gwd_dx_factor   ! 
+
 ! critical richardson number for wave breaking : ! larger drag with larger value
    real(kind=kind_phys), parameter       ::  ric     = 0.25
    real(kind=kind_phys), parameter       ::  dw2min  = 1.
@@ -459,6 +470,20 @@
    real(kind=kind_phys), parameter       ::  frc     = 1.0
    real(kind=kind_phys), parameter       ::  ce      = 0.8
    real(kind=kind_phys), parameter       ::  cg      = 0.5
+!
+! parameter for psl drag
+!
+   real(kind=kind_phys), parameter       ::  var_min = 10.0
+   real(kind=kind_phys), parameter       ::  hmt_min = 50.
+   real(kind=kind_phys), parameter       ::  oc_min  = 1.0
+   real(kind=kind_phys), parameter       ::  oc_max  = 10.0
+! 7.5 mb -- 33 km ... 0.01 kgm-3 reduce gwd drag above cutoff level
+   real(kind=kind_phys), parameter       ::  pcutoff  = 7.5e2
+! 0.76 mb -- 50 km ...0.001 kgm-3  --- 0.1 mb 65 km 0.0001 kgm-3
+   real(kind=kind_phys), parameter       ::  pcutoff_den  = 0.01  !
+!
+! parameter for gsl drag
+!
    real(kind=kind_phys), parameter       ::  sgmalolev  = 0.5  ! max sigma lvl for dtfac
    real(kind=kind_phys), parameter       ::  plolevmeso = 70.0 ! pres lvl for mesosphere OGWD reduction (Pa)
    real(kind=kind_phys), parameter       ::  facmeso    = 0.5  ! fractional velocity reduction for OGWD
@@ -475,6 +500,7 @@
                             bvf2,rdelks,wtkbj,tem,gfobnv,hd,fro,  &
                             rim,temc,tem1,efact,temv,dtaux,dtauy, &
                             dtauxb,dtauyb,eng0,eng1,ksmax,dtfac_meso
+   real(kind=kind_phys) ::  denfac
 !
    logical              ::  ldrag(im),icrilv(im),                 &
                             flag(im),kloop1(im)
@@ -487,9 +513,9 @@
                             ubar(im),vbar(im),                    &
                             fr(im),ulow(im),                      &
                             rulow(im),bnv(im),                    &
-                            oa(im),ol(im),                        &
+                            oa(im),ol(im),oc(im),                 &
                             oass(im),olss(im),                    &
-                            roll(im),dtfac(im),                   &
+                            roll(im),dtfac(im),dtfack(im,km),     &
                             brvf(im),xlinv(im),                   &
                             delks(im),delks1(im),                 &
                             bnv2(im,km),usqj(im,km),              &
@@ -498,6 +524,7 @@
                             vtk(im,km),vtj(im,km),                &
                             zlowtop(im),velco(im,km-1),           &
                             coefm(im),coefm_ss(im)
+   real(kind=kind_phys) ::  lamda(im),lamda_ss(im)
 !
    integer              ::  kbl(im),klowtop(im)
    integer,parameter    ::  mdir=8
@@ -511,9 +538,9 @@
    real(kind=kind_phys),parameter       :: olmin  = 1.0e-5
    real(kind=kind_phys),parameter       :: odmin  = 0.1
    real(kind=kind_phys),parameter       :: odmax  = 10.
+   real(kind=kind_phys),parameter       :: cdmin  = 0.0
    real(kind=kind_phys),parameter       :: erad   = 6371.315e+3
-   integer              :: komax(im)
-   integer              :: kblk
+   integer              :: komax(im),kbmax(im),hmax(im),kblk
    real(kind=kind_phys)                 :: cd
    real(kind=kind_phys)                 :: zblk,tautem
    real(kind=kind_phys)                 :: pe,ke
@@ -654,6 +681,9 @@ do i=1,im
    dxy4p(i,2) = dxy4(i,1)
    dxy4p(i,3) = dxy4(i,4)
    dxy4p(i,4) = dxy4(i,3)
+   lamda(i) = psl_gwd_dx_factor*(delx+dely)*0.5
+   lamda_ss(i) =  0.1 * max(dxmax_ss,dxy4(i,3))
+!   lamda_ss(i) =  lamda(i)                        ! consider .....
 enddo
 !
 !-----initialize arrays
@@ -674,10 +704,10 @@ enddo
      taub (i)      = 0.0
      oa(i)         = 0.0
      ol(i)         = 0.0
+     oc(i)         = 0.0
      oass(i)       = 0.0
      olss(i)       = 0.0
      ulow (i)      = 0.0
-     dtfac(i)      = 1.0
      rstoch(i)     = 0.0
      ldrag(i)      = .false.
      icrilv(i)     = .false.
@@ -695,17 +725,23 @@ enddo
        taud_bl(i,k) = 0.0
        dtaux2d(i,k) = 0.0
        dtauy2d(i,k) = 0.0
+       dtfack(i,k)   = 1.0
      enddo
    enddo
 !
    do i = its,im
+     taup(i,km+1) = 0.0
      xlinv(i)     = 1.0/xl
+     dusfc(i) = 0.0
+     dvsfc(i) = 0.0
    enddo
 !
 !  initialize array for flow-blocking drag
 !
    taufb(1:im,1:km+1) = 0.0
+   hmax(1:im) = 0.0
    komax(1:im) = 0
+   kbmax(1:im) = 0
 !
    do k = kts,km
      do i = its,im
@@ -728,23 +764,79 @@ enddo
 !
 !  determine reference level: maximum of 2*var and pbl heights
 !
+if ( do_gwd_opt_psl ) then
+   do i = its,im
+     if(vtype(i)==15) then
+       zlowtop(i) = 1.0 * var_stoch(i)  !!! reduce drag over land ice
+     else
+       zlowtop(i) = 2.0 * var_stoch(i)
+     endif
+   enddo
+else
    do i = its,im
      zlowtop(i) = 2. * var_stoch(i)
    enddo
+endif
 !
    do i = its,im
-     kloop1(i) = .true.
+     flag(i) = .true.
    enddo
 !
    do k = kts+1,km
      do i = its,im
-       if(kloop1(i).and.zl(i,k)-zl(i,1).ge.zlowtop(i)) then
+       if(flag(i).and.zl(i,k).ge.zlowtop(i)) then
          klowtop(i) = k+1
-         kloop1(i)  = .false.
+         flag(i)  = .false.
        endif
      enddo
    enddo
 !
+if ( do_gwd_opt_psl ) then
+!
+!  determine the maximum height level
+!  note taht elvmax and zl are the heights from the model surface whereas
+!  oro (mean orography) is the height from the sea level
+!
+   do i = its,im
+     flag(i) = .true.
+   enddo
+!
+   do k = kts+1,km
+     do i = its,im
+       if(flag(i).and.zl(i,k).ge.elvmax(i)) then
+         komax(i) = k+1
+         flag(i)  = .false.
+       endif
+     enddo
+   enddo
+!
+!  determine the launching level in determining blocking layer
+!
+   do i = its,im
+     flag(i) = .true.
+   enddo
+!
+   do k = kts+1,km
+     do i = its,im
+       if(flag(i).and.zl(i,k).ge.elvmax(i)+zlowtop(i)) then
+         kbmax(i) = k+1
+         flag(i)  = .false.
+       endif
+     enddo
+   enddo
+!
+!  determing the reference level for gwd and blockding...
+!
+   do i = its,im
+     hmax(i) = max(elvmax(i),zlowtop(i))
+   enddo
+!
+   do i = its,im
+!!!     kbl(i)   = max(kpbl(i), klowtop(i))    ! do not use pbl height for the time being...
+     kbl(i)   = max(komax(i), klowtop(i))
+     kbl(i)   = max(min(kbl(i),kpblmax),kpblmin)
+   enddo
+else
    do i = its,im
      kbl(i)   = max(kpbl(i), klowtop(i))
      kbl(i)   = max(min(kbl(i),kpblmax),kpblmin)
@@ -754,6 +846,7 @@ enddo
 !
    ! komax(:) = kbl(:)
    komax(:) = klowtop(:) - 1    ! modification by NOAA/GSD March 2018
+endif
 !
    do i = its,im
      delks(i)  = 1.0 / (prsi(i,1) - prsi(i,kbl(i)))
@@ -784,7 +877,12 @@ enddo
      idir   = mod(nint(fdir*wdir),mdir) + 1
      nwd    = nwdir(idir)
      oa(i)  = (1-2*int( (nwd-1)/4 )) * oa4(i,mod(nwd-1,4)+1)
+if(do_gwd_opt_psl) then
+     ol(i) = max(ol4(i,mod(nwd-1,4)+1),olmin)
+     oc(i) = min(max(oc1(i),oc_min),oc_max)
+else
      ol(i) = ol4(i,mod(nwd-1,4)+1)
+endif
      ! Repeat for small-scale gwd
      oass(i)  = (1-2*int( (nwd-1)/4 )) * oa4ss(i,mod(nwd-1,4)+1)
      olss(i) = ol4ss(i,mod(nwd-1,4)+1)
@@ -797,11 +895,19 @@ enddo
      ol4p(2) = ol4(i,1)
      ol4p(3) = ol4(i,4)
      ol4p(4) = ol4(i,3)
+if(do_gwd_opt_psl) then
+     olp(i)  = max(ol4p(mod(nwd-1,4)+1),olmin)
+else
      olp(i)  = ol4p(mod(nwd-1,4)+1)
+endif
 !
 !----- compute orographic direction (horizontal orographic aspect ratio)
 !
+if(do_gwd_opt_psl) then
+     od(i) = olp(i)/ol(i)
+else
      od(i) = olp(i)/max(ol(i),olmin)
+endif
      od(i) = min(od(i),odmax)
      od(i) = max(od(i),odmin)
 !
@@ -852,10 +958,23 @@ IF ( (do_gsl_drag_ls_bl).and.                            &
                velco(i,k) = veleps
             endif
          enddo
+if(do_gwd_opt_psl) then
+!
+!  no drag when sub-oro is too small..
+!
+         ldrag(i) = hmax(i).le.hmt_min
+!
+!  no drag when velco.lt.0
+!
+         do k = kpblmin,kpblmax
+            if (k .lt. kbl(i)) ldrag(i) = ldrag(i).or. velco(i,k).le.0.
+         enddo
+else
 !
 !  no drag when critical level in the base layer
 !
          ldrag(i) = velco(i,1).le.0.
+endif
 !
 !  no drag when velco.lt.0
 !
@@ -889,6 +1008,9 @@ IF ( (do_gsl_drag_ls_bl).and.                            &
          ldrag(i) = ldrag(i) .or. bnv2(i,1).le.0.0
          ldrag(i) = ldrag(i) .or. ulow(i).eq.1.0
          ldrag(i) = ldrag(i) .or. var_stoch(i) .le. 0.0
+if(do_gwd_opt_psl) then
+         ldrag(i) = ldrag(i) .or. xland(i) .gt. 1.5
+else
 !  Check if mesoscale gravity waves will propagate vertically or be evanescent
 !  and not impart a drag force -- consider the maximum sub-grid horizontal
 !  topographic wavelength to be one-half the horizontal grid spacing -- calculate
@@ -897,6 +1019,7 @@ IF ( (do_gsl_drag_ls_bl).and.                            &
          if ( bnv2(i,1).gt.0.0 ) then
             ldrag(i) = ldrag(i) .or. sqrt(bnv2(i,1))*rulow(i).lt.ksmax
          endif
+endif
 !
 !  set all ri low level values to the low level value
 !
@@ -926,9 +1049,15 @@ IF ( (do_gsl_drag_ls_bl).and.                            &
 !WRF         cleff    = 3. * max(dx(i),cleff)
             coefm(i) = (1. + ol(i)) ** (oa(i)+1.)
 !WRF         xlinv(i) = coefm(i) / cleff
+if(do_gwd_opt_psl) then
+            xlinv(i) = coefm(i) / lamda(i)
+            tem      = fr(i) * fr(i) * oc(i)
+            gfobnv   = gmax * tem / ((tem + 2.*cg)*bnv(i))
+else
             xlinv(i) = coefm(i) * cleff
             tem      = fr(i) * fr(i) * oc1(i)
             gfobnv   = gmax * tem / ((tem + cg)*bnv(i))
+endif
             if ( gwd_opt_ms ) then
                taub(i)  = xlinv(i) * roll(i) * ulow(i) * ulow(i)           &
                            * ulow(i) * gfobnv * efact
@@ -1024,11 +1153,18 @@ ENDIF  ! (do_gsl_drag_ls_bl).and.(gwd_opt_ms)
 !===============================================================
 IF ( do_gsl_drag_ls_bl .and. gwd_opt_bl ) THEN
 
+if(do_gwd_opt_psl) then
+   do i = its,im
+     flag(i) = .true.
+   enddo
+endif
+
    do i=its,im
 
       if ( ls_taper(i).GT.1.E-02 ) then
 
          if (.not.ldrag(i)) then
+if(.not.do_gwd_opt_psl) then
 !
 !------- determine the height of flow-blocking layer
 !
@@ -1068,6 +1204,51 @@ IF ( do_gsl_drag_ls_bl .and. gwd_opt_bl ) THEN
 !
               ! taup(i,:) = taup(i,:) + taufb(i,:)   ! Keep taup and taufb separate for now
             endif
+else
+!
+!------- determine the height of flow-blocking layer
+!
+            kblk = 0
+            pe = 0.0
+            ke = 0.0
+            do k = km, kpblmin, -1
+               if(flag(i).and. k.le.kbmax(i)) then
+                          pe = pe + bnv2(i,k)*(zl(i,kbmax(i))-zl(i,k))*      &
+                            del(i,k)/g/ro(i,k)
+                  ke = 0.5*((rcs*u1(i,k))**2.+(rcs*v1(i,k))**2.)
+!
+!---------- apply flow-blocking drag when pe >= ke
+!
+                  if(pe.ge.ke.and.zl(i,k).le.hmax(i)) then
+                     kblk= k
+                     zblk = zl(i,k)
+                     RDXZB(i) = real(k,kind=kind_phys)
+                     flag(i) = .false.
+                  endif
+               endif
+            enddo
+            if(.not.flag(i)) then
+!
+!--------- compute flow-blocking stress
+!
+               cd = max(2.0-1.0/od(i),cdmin)
+               taufb(i,kts) =  0.5 * roll(i) * coefm(i) /                  &
+                                 max(dxmax_ms,dxy(i))**2 * cd * dxyp(i) *  &
+                                 olp(i) * zblk * ulow(i)**2
+               tautem = taufb(i,kts)/float(kblk-kts)
+               do k = kts+1, kpblmax
+                  if (k .le. kblk) taufb(i,k) = taufb(i,k-1) - tautem
+               enddo
+!
+!   reset gwd stress below blocking layer
+!
+               do k = kts,kpblmax
+                if (k .le. kblk) taup(i,k) = taup(i,kblk)
+               enddo
+!              if(kblk.gt.5) print *,' gwd kbl komax kbmax kblk ',kbl(i),komax(i),kbmax(i),kblk
+!              if(kblk.gt.5) print *,' gwd elvmax zlowtop zblk ',elvmax(i),zlowtop(i),zl(i,kblk)
+            endif
+endif
 
          endif   ! if (.not.ldrag(i))
 
@@ -1092,11 +1273,43 @@ IF ( (do_gsl_drag_ls_bl) .and.                                       &
 !  The idea is to allow the momentum flux to go out the 'top'.  This
 !  ensures there is no GWD force at the top layer.
 !
+if(.not.do_gwd_opt_psl) then
          taup(i,km+1) = taup(i,km)
+endif
          do k = kts,km
             taud_ms(i,k) = (taup(i,k+1) - taup(i,k)) * csg / del(i,k)
             taud_bl(i,k) = (taufb(i,k+1) - taufb(i,k)) * csg / del(i,k)
          enddo
+if(do_gwd_opt_psl) then
+!
+!  limit de-acceleration (momentum deposition ) at top to 1/2 value
+!  the idea is some stuff must go out the 'top'
+         do klcap = lcap,km
+            taud_ms(i,klcap) = taud_ms(i,klcap) * factop
+            taud_bl(i,klcap) = taud_bl(i,klcap) * factop
+         enddo
+!
+!  if the gravity wave drag would force a critical line
+!  in the lower ksmm1 layers during the next deltim timestep,
+!  then only apply drag until that critical line is reached.
+!
+         do k = kts,kpblmax-1
+           if ((taud_ms(i,k)+taud_bl(i,k)).ne.0.)                  then
+               dtfack(i,k) = min(dtfack(i,k),abs(velco(i,k)                &
+                       /(deltim*rcs*(taud_ms(i,k)+taud_bl(i,k)))))
+           endif
+         enddo
+! apply limiter to mesosphere drag, reduce the drag by density factor 10-3
+! prevent wind reversal...
+!
+         do k = kpblmax,km
+           if ((taud_ms(i,k)+taud_bl(i,k)).ne.0..and.prsl(i,k).le.pcutoff) then
+               denfac = min(ro(i,k)/pcutoff_den,1.)
+               dtfack(i,k) = min(dtfack(i,k),denfac*abs(velco(i,k)        &
+                       /(deltim*rcs*(taud_ms(i,k)+taud_bl(i,k)))))
+           endif
+         enddo
+else
 !
 !
 !  if the gravity wave drag + blocking would force a critical line
@@ -1114,8 +1327,13 @@ IF ( (do_gsl_drag_ls_bl) .and.                                       &
                exit
             endif
          enddo
+endif
 !
          do k = kts,km
+if(do_gwd_opt_psl) then
+            taud_ms(i,k)  = taud_ms(i,k)*dtfack(i,k)* ls_taper(i) *(1.-rstoch(i))
+            taud_bl(i,k)  = taud_bl(i,k)*dtfack(i,k)* ls_taper(i) *(1.-rstoch(i))
+else
 
             ! Check if well into mesosphere -- if so, perform similar reduction of
             ! velocity tendency due to mesoscale GWD to prevent sudden reversal of
@@ -1130,6 +1348,7 @@ IF ( (do_gsl_drag_ls_bl) .and.                                       &
             taud_ms(i,k)  = taud_ms(i,k)*dtfac(i)*dtfac_meso*           &
                                ls_taper(i) *(1.-rstoch(i))
             taud_bl(i,k)  = taud_bl(i,k)*dtfac(i)* ls_taper(i) *(1.-rstoch(i))
+endif
 
             dtaux  = taud_ms(i,k) * xn(i)
             dtauy  = taud_ms(i,k) * yn(i)
