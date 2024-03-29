@@ -300,7 +300,7 @@
   real(kind=kind_phys), dimension(:)     , intent(in)    :: graupel_mp ! microphysics graupel [mm]
   real(kind=kind_phys), dimension(:)     , intent(in)    :: ice_mp     ! microphysics ice/hail [mm]
   real(kind=kind_phys), dimension(:,:)   , intent(in)    :: mntvar     ! subgrid orographic statistics data
-  integer                                , intent(in)    :: psl_gwd_z0m_factor  ! psl tofd zom factor
+  real(kind=kind_phys)                   , intent(in)    :: psl_gwd_z0m_factor  ! psl tofd zom factor
   real(kind=kind_phys), dimension(:)     , intent(in)    :: rhonewsn1  ! precipitation ice density (kg/m^3)
   real(kind=kind_phys)                   , intent(in)    :: con_hvap   ! latent heat condensation [J/kg]
   real(kind=kind_phys)                   , intent(in)    :: con_cp     ! specific heat air [J/kg/K] 
