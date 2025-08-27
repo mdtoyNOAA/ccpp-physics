@@ -6,3 +6,7 @@
   path = physics/MP/TEMPO/TEMPO
   url = https://github.com/NCAR/TEMPO
   branch = main
+[submodule "physics/GWD/UGWP"]
+  path = physics/GWD/UGWP
+  url = https://github.com/noaa-gsl/UGWP
+  branch = develop
