@@ -1,12 +1,12 @@
 [ccpp-table-properties]
-  name = ugwpv1_gsldrag
+  name = mpas_ugwp
   type = scheme
   dependencies = ../hooks/machine.F,drag_suite.F90
   dependencies = cires_ugwpv1_module.F90,cires_ugwpv1_triggers.F90,cires_ugwpv1_initialize.F90,cires_ugwpv1_solv2.F90,ecmwf_ngw.F90
   dependencies = cires_ugwpv1_sporo.F90,cires_ugwpv1_oro.F90 
 ########################################################################
 [ccpp-arg-table]
-  name = ugwpv1_gsldrag_init
+  name = mpas_ugwp_init
   type = scheme
 [me]
   standard_name = mpi_rank
@@ -22,33 +22,11 @@
   dimensions = ()
   type = integer
   intent = in
-[nlunit]
-  standard_name = iounit_of_namelist
-  long_name = fortran unit number for opening namelist file
-  units = none
-  dimensions = ()
-  type = integer
-  intent = in
 [input_nml_file]
   standard_name = filename_of_internal_namelist
   long_name = character string to store full namelist contents
   units = none
   dimensions = (number_of_lines_in_internal_namelist)
-  type = character
-  kind = len=*
-  intent = in
-[logunit]
-  standard_name = iounit_of_log
-  long_name = fortran unit number for writing logfile
-  units = none
-  dimensions = ()
-  type = integer
-  intent = in
-[fn_nml2]
-  standard_name = filename_of_namelist
-  long_name = namelist filename for ugwp
-  units = none
-  dimensions = ()
   type = character
   kind = len=*
   intent = in
@@ -58,6 +36,14 @@
   units = none
   dimensions = (8)
   type = integer
+  intent = in
+[xlat]
+  standard_name = latitude
+  long_name = grid latitude
+  units = radian
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
   intent = in
 [lonr]
   standard_name = number_of_equatorial_longitude_points
@@ -176,76 +162,40 @@
   type = real
   kind = kind_phys
   intent = in
-[do_ugwp]
-  standard_name = flag_for_unified_gravity_wave_physics_gravity_wave_drag_scheme
-  long_name = flag to activate CIRES UGWP
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_ugwp_v0]
-  standard_name = flag_for_ugwp_version_0
-  long_name = flag to activate ver 0 CIRES UGWP
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_ugwp_v0_orog_only]
-  standard_name = flag_for_ugwp_version_0_orographic_gwd
-  long_name = flag to activate ver 0 CIRES UGWP - orographic GWD only
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_gsl_drag_ls_bl]
-  standard_name = do_gsl_drag_suite_mesoscale_orographic_and_blocking_drag
-  long_name = flag to activate GSL drag suite - mesoscale GWD and blocking
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_gsl_drag_ss]
-  standard_name = do_gsl_drag_suite_small_scale_orographic_drag
-  long_name = flag to activate GSL drag suite - small-scale GWD
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_gsl_drag_tofd]
-  standard_name = do_gsl_drag_suite_turbulent_orographic_form_drag
-  long_name = flag to activate GSL drag suite - turb orog form drag
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_ngw_ec]
-  standard_name = flag_for_ngw_ec
-  long_name = flag to activate ecmwf ngwd
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_ugwp_v1]
-  standard_name = flag_for_ugwp_version_1
-  long_name = flag to activate ver 1 CIRES UGWP
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_ugwp_v1_orog_only]
-  standard_name = flag_for_ugwp_version_1_orographic_gwd
-  long_name = flag to activate ver 1 CIRES UGWP - orographic GWD only
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
-[do_ugwp_v1_w_gsldrag]
-  standard_name = flag_for_ugwp_version_1_nonorographic_gwd
-  long_name = flag to activate ver 1 CIRES UGWP - with OGWD of GSL
-  units = flag
-  dimensions = ()
-  type = logical
-  intent = in
+[jindx1_tau]
+  standard_name = lower_latitude_index_of_absolute_momentum_flux_due_to_nonorographic_gravity_wave_drag_for_interpolation
+  long_name = index1 for weight1 for tau NGWs
+  units = none
+  dimensions = (horizontal_dimension)
+  type = integer
+  intent = inout
+  optional = True
+[jindx2_tau]
+  standard_name = upper_latitude_index_of_absolute_momentum_flux_due_to_nonorographic_gravity_wave_drag_for_interpolation
+  long_name = index2 for weight2 for tau NGWs
+  units = none
+  dimensions = (horizontal_dimension)
+  type = integer
+  intent = inout
+  optional = True
+[ddy_j1tau]
+  standard_name = latitude_interpolation_weight_complement_for_absolute_momentum_flux_due_to_nonorographic_gravity_wave_drag
+  long_name = interpolation weight1 for tau NGWs
+  units = none
+  dimensions = (horizontal_dimension)
+  type = real
+  intent = inout
+  kind = kind_phys
+  optional = True
+[ddy_j2tau]
+  standard_name = latitude_interpolation_weight_for_absolute_momentum_flux_due_to_nonorographic_gravity_wave_drag
+  long_name = interpolation weight2 for tau NGWs
+  units = none
+  dimensions = (horizontal_dimension)
+  type = real
+  intent = inout
+  kind = kind_phys
+  optional = True
 [errmsg]
   standard_name = ccpp_error_message
   long_name = error message for error handling in CCPP
@@ -264,7 +214,7 @@
 
 ########################################################################
 [ccpp-arg-table]
-  name = ugwpv1_gsldrag_finalize
+  name = mpas_ugwp_finalize
   type = scheme
 [errmsg]
   standard_name = ccpp_error_message
@@ -284,7 +234,7 @@
 
 ########################################################################
 [ccpp-arg-table]
-  name = ugwpv1_gsldrag_run
+  name = mpas_ugwp_run
   type = scheme
 [me]
   standard_name = mpi_rank
