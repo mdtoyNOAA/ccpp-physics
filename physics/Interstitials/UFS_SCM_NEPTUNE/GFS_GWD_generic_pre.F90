@@ -12,7 +12,7 @@ contains
       subroutine GFS_GWD_generic_pre_run(                               &
      &           im, levs, nmtvr, mntvar,                               &
      &           oc, oa4, clx, theta,                                   &
-     &           varss, ocss, oa4ss, clxss,                             &
+     &           varss, ocss, oa4ss, clxss, F_n, h_amp,                 &
      &           sigma, gamma, elvmax, lssav, ldiag3d,                  &
      &           dtend, dtidx, index_of_temperature, index_of_x_wind,   &
      &           index_of_y_wind, index_of_process_orographic_gwd,      &
@@ -30,6 +30,8 @@ contains
      &  theta(:), sigma(:), gamma(:), elvmax(:)
       real(kind=kind_phys), intent(out), optional ::                    &
      &  varss(:), ocss(:), oa4ss(:,:), clxss(:,:)
+      real(kind=kind_phys), intent(out), optional ::                    &
+     &  F_n(:,:), h_amp(:)
       logical, intent(in) :: lssav, ldiag3d, flag_for_gwd_generic_tend
       real(kind=kind_phys), intent(in) :: dtdt(:,:), dudt(:,:), dvdt(:,:)
       ! dtend only allocated only if ldiag3d is .true.
@@ -129,9 +131,9 @@ contains
         clxss(:,2)  = mntvar(:,22)
         clxss(:,3)  = mntvar(:,23)
         clxss(:,4)  = mntvar(:,24)
-        F_1(:)      = mntvar(:,25)
-        F_2(:)      = mntvar(:,26)
-        F_3(:)      = mntvar(:,27)
+        F_n(:,1)    = mntvar(:,25)
+        F_n(:,2)    = mntvar(:,26)
+        F_n(:,3)    = mntvar(:,27)
         h_amp(:)    = mntvar(:,28)
       else
         oc     = 0
