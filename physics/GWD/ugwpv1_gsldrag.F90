@@ -310,7 +310,8 @@ contains
           do_ngw_ec, do_ugwp_v1,  do_ugwp_v1_orog_only,                                 &
           do_ugwp_v1_w_gsldrag, gwd_opt, do_tofd, ldiag_ugwp, ugwp_seq_update,          &
           cdmbgwd, alpha_fd, jdat, nmtvr, hprime, oc, theta, sigma, gamma,              &
-          elvmax, clx, oa4, varss,oc1ss,oa4ss,ol4ss, dx,  xlat, xlat_d, sinlat, coslat, &
+          elvmax, clx, oa4, varss,oc1ss,oa4ss,ol4ss, F_n, h_amp,                        &
+          dx,  xlat, xlat_d, sinlat, coslat,                                            &
           area, rain, br1, hpbl,vtype, kpbl, slmsk,                                     &
           ugrs, vgrs, tgrs, q1, prsi, prsl, prslk, phii, phil,  del, tau_amf,           &
           dudt_ogw, dvdt_ogw, du_ogwcol, dv_ogwcol,                                     &
@@ -385,6 +386,8 @@ contains
     real(kind=kind_phys),    intent(in), dimension(:)       :: dx
     real(kind=kind_phys),    intent(in), dimension(:)       :: varss,oc1ss
     real(kind=kind_phys),    intent(in), dimension(:,:)     :: oa4ss,ol4ss
+    real(kind=kind_phys),    intent(in), dimension(:,:), optional :: F_n
+    real(kind=kind_phys),    intent(in), dimension(:),   optional :: h_amp
 
 !=====
 !ccpp-style passing constants, I prefer to take them out from the "call-subr" list
@@ -575,7 +578,7 @@ contains
                  ugrs,vgrs,tgrs,q1,                                  &
                  kpbl,prsi,del,prsl,prslk,phii,phil,dtp,             &
                  kdt,hprime,oc,oa4,clx,varss,oc1ss,oa4ss,            &
-                 ol4ss,theta,sigma,gamma,elvmax,                     &
+                 ol4ss,F_n,h_amp,theta,sigma,gamma,elvmax,           &
                  dudt_ogw, dvdt_ogw, dudt_obl, dvdt_obl,             &
                  dudt_oss, dvdt_oss, dudt_ofd, dvdt_ofd,             &
                  dusfcg,  dvsfcg,                                    &

@@ -206,7 +206,7 @@
      &           IM,KM,dvdt,dudt,dtdt,U1,V1,T1,Q1,KPBL,                 &
      &           PRSI,DEL,PRSL,PRSLK,PHII,PHIL,DELTIM,KDT,              &
      &           var,oc1,oa4,ol4,                                       &
-     &           varss,oc1ss,oa4ss,ol4ss,                               &
+     &           varss,oc1ss,oa4ss,ol4ss,F_n,h_amp,                     &
      &           THETA,SIGMA,GAMMA,ELVMAX,                              &
      &           dtaux2d_ms,dtauy2d_ms,dtaux2d_bl,dtauy2d_bl,           &
      &           dtaux2d_ss,dtauy2d_ss,dtaux2d_fd,dtauy2d_fd,           &
@@ -351,6 +351,7 @@
      &                                   dx(:)
    real(kind=kind_phys), intent(in) ::   varss(:),oc1ss(:), &
      &                              oa4ss(:,:),ol4ss(:,:)
+   real(kind=kind_phys), intent(in), optional :: F_n(:,:), h_amp(:)
    real(kind=kind_phys), intent(in) :: THETA(:),SIGMA(:),      &
      &                                 GAMMA(:),ELVMAX(:)
 
